@@ -33,6 +33,182 @@
 <body>
 
     <h1>Project Plan: Integrating R Methods into Python</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GWAS Data Processing with Python and R Integration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1, h2, h3, h4 {
+            color: #2C3E50;
+        }
+        ul, ol {
+            margin: 20px 0;
+            padding-left: 20px;
+        }
+        code, pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ccc;
+            display: block;
+        }
+        .diagram {
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>GWAS Data Processing with Python and R Integration</h1>
+
+    <h2>1. Project Overview</h2>
+
+    <h3>Title:</h3>
+    <p>GWAS Data Processing with Python and R Integration</p>
+
+    <h3>Objective:</h3>
+    <p>The goal of this project is to create a system where users can upload a GWAS summary statistics file, and the system will query gnomAD for allele frequencies based on the "chromosome" and "position" variables. Once merged, R methods will be applied to the resulting table using Python as the orchestrating environment. All user data will be purged after processing to maintain privacy.</p>
+
+    <h3>Scope:</h3>
+    <ul>
+        <li>Users upload GWAS files.</li>
+        <li>Hail queries gnomAD for allele frequency data.</li>
+        <li>Data merged on "chromosome" and "position".</li>
+        <li>R methods are applied via rpy2 or script execution.</li>
+        <li>Data purging post-processing.</li>
+        <li>Docker Compose for deployment.</li>
+        <li>Hosted on Google Cloud Platform (GCP) virtual machine.</li>
+    </ul>
+
+    <h2>2. Requirements</h2>
+
+    <h3>Functional Requirements:</h3>
+    <ul>
+        <li>Users can upload a GWAS summary statistics file via a web interface.</li>
+        <li>The program will query gnomAD for allele frequencies corresponding to the "chromosome" and "position" in the user's file.</li>
+        <li>Data merging of the GWAS summary statistics file with the gnomAD allele frequencies based on matching "chromosome" and "position".</li>
+        <li>R methods are applied to the merged data from within Python.</li>
+        <li>After processing, the user’s data is securely deleted.</li>
+        <li>The system runs within Docker containers, including one for the web server and one for task management.</li>
+    </ul>
+
+    <h3>Non-Functional Requirements:</h3>
+    <ul>
+        <li><strong>Security:</strong> All user data must be purged after the R methods have been applied.</li>
+        <li><strong>Scalability:</strong> The system should handle large datasets from GWAS and gnomAD efficiently.</li>
+        <li><strong>Resource Management:</strong> Constrain resources using Docker to ensure efficient usage on GCP.</li>
+    </ul>
+
+    <h3>Tech Stack:</h3>
+    <ul>
+        <li>Programming Languages: Python (Flask), R</li>
+        <li>Libraries/Tools:
+            <ul>
+                <li>rpy2 for integrating R within Python.</li>
+                <li>Hail for querying gnomAD.</li>
+                <li>Docker Compose for containerization.</li>
+            </ul>
+        </li>
+        <li>Hosting: Google Cloud Platform (GCP) Virtual Machine.</li>
+    </ul>
+
+    <h2>3. User Stories</h2>
+
+    <ul>
+        <li>As a researcher, I want to upload a GWAS summary statistics file and receive a merged file with allele frequencies from gnomAD so that I can perform further analysis.</li>
+        <li>As a data scientist, I want the system to apply R methods to the merged data directly from Python, allowing me to leverage both languages for analysis.</li>
+        <li>As a security-conscious user, I want my uploaded data to be deleted after processing to ensure privacy.</li>
+    </ul>
+
+    <h2>4. System Architecture</h2>
+
+    <h3>High-Level Components:</h3>
+    <ul>
+        <li><strong>Web Server (Flask):</strong> Manages user uploads and handles requests. Runs in its own Docker container.</li>
+        <li><strong>Hail/gnomAD Querying:</strong> Hail queries gnomAD for allele frequencies based on the "chromosome" and "position" variables. Merges this data with the user’s GWAS file.</li>
+        <li><strong>R Method Execution (rpy2):</strong> The merged data is passed to R methods via rpy2 or script execution.</li>
+        <li><strong>Task Queue (Celery/Redis):</strong> Runs the long-running tasks (querying gnomAD, merging, R processing) in the background. Runs in a separate Docker container for scalability.</li>
+        <li><strong>Docker Compose:</strong> Orchestrates containers for web server and task queue.</li>
+        <li><strong>Data Purge:</strong> Ensures all data related to the user’s GWAS file is purged after processing.</li>
+    </ul>
+
+    <h3>Data Flow:</h3>
+    <ol>
+        <li>User uploads GWAS summary.</li>
+        <li>Hail queries gnomAD and returns allele frequencies.</li>
+        <li>GWAS data and gnomAD data are merged.</li>
+        <li>R methods are applied to the merged data using rpy2.</li>
+        <li>Processed data is returned, and the uploaded data is deleted.</li>
+    </ol>
+
+    <div class="diagram">
+        <h4>Architecture Diagram:</h4>
+        <p>[Insert a diagram showing Flask (web server), Hail, R via rpy2, Docker Compose, and GCP].</p>
+    </div>
+
+    <h2>5. Data Structures and Algorithms</h2>
+
+    <h3>Data Models:</h3>
+    <ul>
+        <li><strong>GWAS Summary File:</strong> Key Variables: chromosome, position, allele frequency, p-value, etc.</li>
+        <li><strong>gnomAD Data:</strong> Key Variables: chromosome, position, allele frequency.</li>
+        <li><strong>Merged Data:</strong> Combines GWAS data with gnomAD allele frequencies based on "chromosome" and "position".</li>
+    </ul>
+
+    <h3>Algorithms:</h3>
+    <ul>
+        <li><strong>Hail Querying:</strong> Efficiently queries gnomAD for chromosome/position pairs.</li>
+        <li><strong>Merging Algorithm:</strong> Match GWAS records with gnomAD records based on chromosome/position pairs.</li>
+        <li><strong>R Methods:</strong> R methods are applied via Python using rpy2 or script execution.</li>
+    </ul>
+
+    <h2>6. Development Roadmap</h2>
+
+    <h3>Milestones:</h3>
+    <ul>
+        <li><strong>Phase 1: Project Setup</strong>
+            <ul>
+                <li>Set up Flask web server for file uploads.</li>
+                <li>Set up Hail for querying gnomAD.</li>
+            </ul>
+        </li>
+        <li><strong>Phase 2: Data Processing</strong>
+            <ul>
+                <li>Implement data merging between GWAS file and gnomAD results.</li>
+                <li>Test R integration with rpy2 or R script execution.</li>
+            </ul>
+        </li>
+        <li><strong>Phase 3: Docker and Deployment</strong>
+            <ul>
+                <li>Dockerize the application using Docker Compose.</li>
+                <li>Deploy on GCP VM.</li>
+            </ul>
+        </li>
+        <li><strong>Phase 4: Final Integration</strong>
+            <ul>
+                <li>Set up task queues using Celery/Redis.</li>
+                <li>Ensure data purging functionality.</li>
+            </ul>
+        </li>
+    </ul>
+
+    <h3>Timeline:</h3>
+    <ul>
+        <li>Phase 1: 2 weeks</li>
+        <li>Phase 2: 3 weeks</li>
+        <li>Phase 3: 2 weeks</li>
+        <li>Phase 4: 1 week</li>
 
     <p>This project involves building a system where users can upload GWAS summary statistics files, query allele frequencies from gnomAD using Hail, merge the data, and apply R-based methods within Python. The system architecture leverages task queues using Celery and Redis for handling asynchronous tasks, and Docker Compose for resource-efficient deployment. The project will run on a Google Cloud Platform virtual machine.</p>
 
