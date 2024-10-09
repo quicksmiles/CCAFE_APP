@@ -297,19 +297,3 @@ result = subprocess.run(["Rscript", "my_script.R", "input_data.csv", "output_dat
         <li><strong>Data Cleanup:</strong>  
         Ensure that after the R script finishes, both the input (uploaded data) and any temporary files are deleted from the system.</li>
     </ol>
-
-    <h2>Architecture Diagram</h2>
-
-    <div class="diagram">
-        <pre><code>+------------------+             +---------------------+           +-------------------+
-|                  |             |                     |           |                   |
-|   Flask Web      |   Uploads   |  Task Queue (Celery) |  Executes |   Celery Worker    |
-|   Server         +------------>+  & Redis             +---------->+   (Hail, Rpy2)     |
-|   (User Upload)  |             |  Manages Tasks       |           |   Processes Task   |
-+------------------+             +---------------------+           +--------+----------+
-                                                             Queries          |
-                                                             gnomAD           |
-                                                                |             |
-                                                                v             |
-                                                      +------------------+    |
-                                                      |                  |    |
