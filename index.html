@@ -298,23 +298,6 @@ result = subprocess.run(["Rscript", "my_script.R", "input_data.csv", "output_dat
         Ensure that after the R script finishes, both the input (uploaded data) and any temporary files are deleted from the system.</li>
     </ol>
 
-    <h3>R Script Example:</h3>
-
-    <pre><code># my_script.R
-args <- commandArgs(trailingOnly = TRUE)
-input_file <- args[1]
-output_file <- args[2]
-
-# Read the input CSV file
-data <- read.csv(input_file)
-
-# Apply some R-based methods (e.g., statistical analysis, allele frequency estimation)
-# Example: Simple allele frequency computation
-data$allele_frequency <- data$allele_count / data$total_count
-
-# Write the processed data to output
-write.csv(data, output_file, row.names = FALSE)</code></pre>
-
     <h2>Architecture Diagram</h2>
 
     <div class="diagram">
