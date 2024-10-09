@@ -81,7 +81,7 @@
 
     <h3>Scope:</h3>
     <ul>
-        <li>Users upload GWAS files.</li>
+        <li>Users upload or option to provide url to GWAS files.</li>
         <li>Hail queries gnomAD for allele frequency data.</li>
         <li>Data merged on "chromosome" and "position".</li>
         <li>R methods are applied via rpy2 or script execution.</li>
@@ -96,7 +96,7 @@
     <ul>
         <li>Users can upload a GWAS summary statistics file via a web interface.</li>
         <li>The program will query gnomAD for allele frequencies corresponding to the "chromosome" and "position" in the user's file.</li>
-        <li>Data merging of the GWAS summary statistics file with the gnomAD allele frequencies based on matching "chromosome" and "position".</li>
+        <li>Data merging of the GWAS summary statistics file with the gnomAD allele frequencies based on matching "chromosome" and "position" along with gnomAD group they want to query.</li>
         <li>R methods are applied to the merged data from within Python.</li>
         <li>After processing, the user’s data is securely deleted.</li>
         <li>The system runs within Docker containers, including one for the web server and one for task management.</li>
@@ -125,7 +125,7 @@
     <h2>3. User Stories</h2>
 
     <ul>
-        <li>As a researcher, I want to upload a GWAS summary statistics file and receive a merged file with allele frequencies from gnomAD so that I can perform further analysis.</li>
+        <li>As a researcher, I want to upload a GWAS summary statistics file and receive a merged file with allele frequencies from gnomAD so that I can perform further analysis. In a resource, time, and money efficient platform. </li
         <li>As a data scientist, I want the system to apply R methods to the merged data directly from Python, allowing me to leverage both languages for analysis.</li>
         <li>As a security-conscious user, I want my uploaded data to be deleted after processing to ensure privacy.</li>
     </ul>
@@ -148,7 +148,7 @@
         <li>Hail queries gnomAD and returns allele frequencies.</li>
         <li>GWAS data and gnomAD data are merged.</li>
         <li>R methods are applied to the merged data using rpy2.</li>
-        <li>Processed data is returned, and the uploaded data is deleted.</li>
+        <li>Processed results are returned with the ability to be downloaded, and the uploaded data is deleted.</li>
     </ol>
 
     <h2>5. Data Structures and Algorithms</h2>
@@ -156,18 +156,20 @@
     <h3>Data Models:</h3>
     <ul>
         <li><strong>GWAS Summary File:</strong> Key Variables: chromosome, position, allele frequency, p-value, etc.</li>
-        <li><strong>gnomAD Data:</strong> Key Variables: chromosome, position, allele frequency.</li>
+        <li><strong>gnomAD Data:</strong> Key Variables: chromosome, position, allele frequency, genetic ancestry group, reference and alternate allele.</li>
         <li><strong>Merged Data:</strong> Combines GWAS data with gnomAD allele frequencies based on "chromosome" and "position".</li>
     </ul>
 
     <h3>Algorithms:</h3>
     <ul>
         <li><strong>Hail Querying:</strong> Efficiently queries gnomAD for chromosome/position pairs.</li>
-        <li><strong>Merging Algorithm:</strong> Match GWAS records with gnomAD records based on chromosome/position pairs.</li>
+        <li><strong>Merging Algorithm:</strong> Match GWAS records with gnomAD records based on chromosome/position pairs and allele.</li>
         <li><strong>R Methods:</strong> R methods are applied via Python using rpy2 or script execution.</li>
     </ul>
 
     <h2>6. Development Roadmap</h2>
+
+     <li><strong>Before moving from one phase to the next there will be a testing/review.</strong>
 
     <h3>Milestones:</h3>
     <ul>
@@ -175,6 +177,8 @@
             <ul>
                 <li>Set up Flask web server for file uploads.</li>
                 <li>Set up Hail for querying gnomAD.</li>
+                 <li>Set up whole user interface.</li>
+            </ul>
             </ul>
         </li>
         <li><strong>Phase 2: Data Processing</strong>
