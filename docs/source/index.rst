@@ -6,12 +6,18 @@
 CCAFE APP Plan and Documentation
 ===================================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+This GitHub Page serves to record decision making, management, and development for
+the `Case and Control Allele Frequency Estimation <https://wolffha.github.io/CCAFE/>`_ public application. 
+It includes a detailed proposal and revised documentaion that will be continuesly updated as the project develops.
 
+.. note::
+
+   This project is under active development.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   
+   plan
+   documentation
 
