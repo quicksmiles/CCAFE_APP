@@ -20,8 +20,9 @@ build:
 python:
   install:
     - requirements: docs/requirements.txt
-    - method: pip
-      path: .
+    # To be included once I start adding Sphinx specific functionality
+    #- method: pip
+    #  path: .
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
