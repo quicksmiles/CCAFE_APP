@@ -17,6 +17,7 @@ It includes a detailed proposal and revised documentaion that will be continuesl
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-   Plan
-   Documentation
+   
+   plan
+   documentation
 
