@@ -9,27 +9,33 @@ Plan
 **Title:**  
 GWAS Data Processing with Python and R Integration
 
-**Objective:**  
-The goal of this project is to create a system where users can upload a GWAS summary statistics file, and the system will query gnomAD for allele frequencies based on the "chromosome" and "position" variables. Once merged, R methods will be applied to the resulting table using Python as the orchestrating environment. All user data will be purged after processing to maintain privacy.
+**Objective:**
+The goal of this project is to create a web based user interface, where researchers can upload their GWAS summary statistics file in Variant Call Format (vcf) and recapitulate case and control allele frequencies (AF) in their dataset. The system will query gnomAD to pull and merge required fields needed to compute the case and contol allele frequencies, specifically superpopulation minor allele frequencies.
+The gnomAD information will be merged with the researchers dataset based on "chromosome" and "dsposition" fields. Once merged, R methods that reconstruct allele frequencies for case and control will be applied to the dataset. After the resulting table is produced all data will be purged after processing to maintain privacy.
 
 **Scope:**
 
-* Users upload or provide a URL to GWAS files from gnomAD build 38.
-* Hail queries gnomAD for allele frequency data.
+The following outlines the scope of requirements and tools used, necessary for the minimal and primary functionality of this web based applicaiton.
+
+* Users upload GWAS file from gnomAD build 38.
+* User upload must contain "chromosome", "position", "number of cases", 
+  "number of controls", "odds ratio (OR)" or "beta coefficient", 
+  "allele frequency total (combined caase and control)" or "standard error (SE)"
+* Hail queries gnomAD for superpopulation minor allele frequency data.
 * Data merged on "chromosome" and "position."
 * R methods are applied via `rpy2` or script execution.
-* Data purging post-processing.
+* Data purging post-processing via Docker services or Google Dataproc.
 * Docker Compose for deployment.
 * Hosted on Google Cloud Platform (GCP) virtual machine.
 
-2. Requirements
+1. Requirements
 ---------------
 
 **Functional Requirements:**
 
-* Users can upload a GWAS summary statistics file via a web interface from build-GRCh 38.
-* The program will query gnomAD for allele frequencies corresponding to the "chromosome" and "position" in the user's file.
-* Data merging of the GWAS summary statistics file with the gnomAD allele frequencies based on matching "chromosome" and "position" along with gnomAD group they want to query.
+* Users can upload a GWAS summary statistics VCF file that's on build GRCh38 via a web interface.
+* The program will query gnomAD via Hail for superpopulation minor allele frequencies corresponding to the "chromosome" and "position" in the user's file.
+* Data merging of the GWAS summary statistics file with the gnomAD superpopulation minor allele frequencies based on matching "chromosome" and "position".
 * R methods are applied to the merged data from within Python.
 * After processing, the user’s data is securely deleted.
 * The system runs within Docker containers, including one for the web server and one for task management.
@@ -37,32 +43,33 @@ The goal of this project is to create a system where users can upload a GWAS sum
 **Non-Functional Requirements:**
 
 * **Security:** All user data must be purged after the R methods have been applied.
-* **Scalability:** The system should handle large datasets from GWAS and gnomAD efficiently.
+* **Scalability:** The system should handle large datasets from GWAS files and gnomAD datasets efficiently.
 * **Resource Management:** Constrain resources using Docker to ensure efficient usage on GCP.
 
 **Tech Stack:**
 
 * **Programming Languages:** Python (Flask), R
 * **Libraries/Tools:**
-  * `rpy2` for integrating R within Python.
-  * Hail for querying gnomAD.
-  * Docker Compose for division of resources amongst tasks.
-* **Hosting:** Google Cloud Platform (GCP) Virtual Machine.
+  * 'rpy2' or R scripts for integrating R within Python.
+  * Hail for querying and merging gnomAD data.
+  * Docker Compose for file system management and resource relationships amongst tasks.
+* **Hosting:** Google Cloud Platform (GCP) Virtual Machine and Dataproc.
 
-3. User Stories
+1. User Stories
 ---------------
 
-* As a researcher, I want to upload a GWAS summary statistics file and receive a merged file with allele frequencies from gnomAD so that I can perform further analysis efficiently.
-* As a data scientist, I want the system to apply R methods to the merged data directly from Python, allowing me to leverage both languages for analysis.
+* As a researcher, I want to upload a GWAS summary statistics file and receive a merged file with case and control allele frequencies so that I can perform further analysis efficiently.
+* As a researcher, I want to recieve accurate and thoughfully reproduced GWAS fields so as not to propegate bad data.
+* As a data scientist, I want an efficient system to apply R methods to large merged datasets directly from Python, allowing me to leverage both languages for analysis.
 * As a security-conscious user, I want my uploaded data to be deleted after processing to ensure privacy.
 
-4. System Architecture
+1. System Architecture
 -----------------------
 
 **High-Level Components:**
 
 * **Web Server (Flask):** Manages user uploads and handles requests. Runs in its own Docker container.
-* **Hail/gnomAD Querying:** Hail queries gnomAD for allele frequencies based on the "chromosome" and "position" variables. Merges this data with the user’s GWAS file.
+* **Hail for querying and merging:** Hail queries gnomAD for allele frequencies based on the "chromosome" and "position" variables. Merges this data with the user’s GWAS file.
 * **R Method Execution (rpy2):** The merged data is passed to R methods via `rpy2` or script execution.
 * **Task Queue (Celery/Redis):** Runs the long-running tasks (querying gnomAD, merging, R processing) in the background. Runs in a separate Docker container for scalability.
 * **Docker Compose:** Orchestrates containers for web server and task queue.
@@ -70,28 +77,46 @@ The goal of this project is to create a system where users can upload a GWAS sum
 
 **Data Flow:**
 
-1. User uploads GWAS summary.
-2. Hail queries gnomAD and returns allele frequencies.
+1. User uploads GWAS summary statistics VCF file.
+2. Hail queries gnomAD and returns superpopulation minor allele frequencies.
 3. GWAS data and gnomAD data are merged.
-4. R methods are applied to the merged data using `rpy2`.
+4. R methods are applied to the merged data using `rpy2` or an R script.
 5. Processed results are returned with the ability to be downloaded, and the uploaded data is deleted.
 
-5. Data Structures and Algorithms
+1. Data Structures and Algorithms
 ---------------------------------
 
 **Data Models:**
 
-* **GWAS Summary File:** Key Variables: chromosome, position, allele frequency, p-value, etc.
-* **gnomAD Data:** Key Variables: chromosome, position, allele frequency, genetic ancestry group, reference and alternate allele.
-* **Merged Data:** Combines GWAS data with gnomAD allele frequencies based on "chromosome" and "position."
+* **GWAS Summary File:** Key Variables: chromosome, position, number of cases, 
+  number of controls, odds ratio (OR) or beta coefficient, 
+  allele frequency total (combined caase and control) or standard error (SE)
+* **gnomAD Data:** Key Variables: chromosome, position, superpopulation minor allele frequency, reference and alternate allele.
+* **Merged Data:** Combines user uploaded GWAS data with gnomAD superpopulation minor allele frequencies based on "chromosome" and "position."
 
 **Algorithms:**
 
-* **Hail Querying:** Efficiently queries gnomAD for chromosome/position pairs.
+* **Hail Querying:** Efficiently queries gnomAD superpopulation minor allele frequencies from the "HGDP + 1000 Genomes Dense Hail MatrixTable" dataset on gnomAD and merges on chromosome/position pairs.
+  
+  This is an initial query attempt to retrieve superpopulation MAF with the aid of ChatGPT
+  .. code-block:: python
+
+      import hail as hl
+
+      # Initialize Hail
+      hl.init()
+
+      # Load the HGDP + 1KG dense MatrixTable from the gnomAD release
+      mt = hl.read_matrix_table("gs://gcp-public-data--gnomad/release/3.1.2/mt/genomes/gnomad.genomes.v3.1.2.hgdp_1kg_subset_dense.mt")
+
+      # Annotate rows (variants) with allele frequency (AF) for alternate alleles
+      mt = mt.annotate_rows(allele_freqs = hl.agg.call_stats(mt.GT, mt.alleles))
+
+
 * **Merging Algorithm:** Match GWAS records with gnomAD records based on chromosome/position pairs and allele.
 * **R Methods:** R methods are applied via Python using `rpy2` or script execution.
 
-6. Development Roadmap
+1. Development Roadmap
 ----------------------
 
 **Milestones:**
