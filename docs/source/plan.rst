@@ -3,7 +3,7 @@ Plan
 
 .. title:: GWAS Case/Control Data Processing with Python and R Integration
 
-1. Project Overview
+Project Overview
 -------------------
 
 **Title:**  
@@ -99,7 +99,8 @@ The following outlines the scope of requirements and tools used, necessary for t
 * **Hail Querying:** Efficiently queries gnomAD superpopulation minor allele frequencies from the "HGDP + 1000 Genomes Dense Hail MatrixTable" dataset on gnomAD and merges on chromosome/position pairs.
   
   This is an initial query attempt to retrieve superpopulation MAF with the aid of ChatGPT
-  .. code-block:: python
+
+   .. code-block:: python
 
       import hail as hl
 
@@ -111,7 +112,6 @@ The following outlines the scope of requirements and tools used, necessary for t
 
       # Annotate rows (variants) with allele frequency (AF) for alternate alleles
       mt = mt.annotate_rows(allele_freqs = hl.agg.call_stats(mt.GT, mt.alleles))
-
 
 * **Merging Algorithm:** Match GWAS records with gnomAD records based on chromosome/position pairs and allele.
 * **R Methods:** R methods are applied via Python using `rpy2` or script execution.
