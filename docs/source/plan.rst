@@ -102,10 +102,45 @@ The following outlines the scope of requirements and tools used, necessary for t
 
    .. code-block:: python
 
-      import hail as hl
+    import hail as hl
+hl.init()
 
-      # Initialize Hail
-      hl.init()
+from hail.plot import show
+from pprint import pprint
+hl.plot.output_notebook()  
+
+    mt = hl.read_matrix_table("gs://gcp-public-data--gnomad/release/3.1.2/mt/genomes/gnomad.genomes.v3.1.2.hgdp_1kg_subset_dense.mt")
+
+# Annotate rows (variants) with allele frequency (AF) for alternate alleles
+mt = mt.annotate_rows(allele_freqs = hl.agg.call_stats(mt.GT, mt.alleles))
+# Calculate the MAF for each variant
+mt = mt.annotate_rows(minor_allele_freq = hl.min(mt.allele_freqs.AF[1:]))
+# Filter rows (variants) with MAF less than 5% (for example)
+common_variants = mt.filter_rows(mt.minor_allele_freq > 0.05)
+# Show first few variants with their MAF
+common_variants.rows().select('minor_allele_freq').show(5)
+
+# Load sample metadata (replace path with actual metadata file path)
+sample_metadata = hl.import_table('gs://gcp-public-data--gnomad/release/3.1/secondary_analyses/hgdp_1kg_v2/metadata_and_qc/gnomad_meta_v1.tsv', key='s')
+
+# Make sure to check the structure of the metadata and use the correct fields
+# This assumes the metadata includes a 'super_population' column that categorizes samples
+# Annotate columns (samples) in the MatrixTable with super population data
+mt = mt.annotate_cols(super_population = sample_metadata[mt.s].super_population)
+
+# Group samples by super population and compute allele frequencies for each group
+mt = mt.annotate_rows(super_pop_allele_freqs = hl.agg.group_by(mt.super_population, hl.agg.call_stats(mt.GT, mt.alleles)))
+
+# Calculate the minor allele frequency for each super population
+mt = mt.annotate_rows(
+    super_pop_maf = {
+        pop: hl.min(freq.AF[1:])  # Compute MAF from alternate allele frequencies
+        for pop, freq in mt.super_pop_allele_freqs.items()
+    }
+)
+
+# Show the first few rows with super population MAFs
+mt.rows().select('super_pop_maf').show(5)
 
       # Load the HGDP + 1KG dense MatrixTable from the gnomAD release
       mt = hl.read_matrix_table("gs://gcp-public-data--gnomad/release/3.1.2/mt/genomes/gnomad.genomes.v3.1.2.hgdp_1kg_subset_dense.mt")
