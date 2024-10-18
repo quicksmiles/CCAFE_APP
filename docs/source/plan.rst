@@ -4,7 +4,7 @@ Plan
 .. title:: GWAS Case/Control Data Processing with Python and R Integration
 
 Project Overview
--------------------
+=================
 
 **Title:**  
 Case and Control Estimation Graphical User Interface - Data Harmonizing and Integration via Python
@@ -142,13 +142,14 @@ The following outlines the scope of requirements and tools used, necessary for t
 * Phase 3: 2 weeks
 * Phase 4: 1 week
 
-System Overview
-===============
-
-The project involves building a system where users can upload GWAS summary statistics files, query allele frequencies from gnomAD using Hail, merge the data, and apply R-based methods within Python. The system architecture leverages task queues using Celery and Redis for handling asynchronous tasks and Docker Compose for resource-efficient deployment. The project will run on a Google Cloud Platform virtual machine.
 
 Key Components
---------------
+===============
+
+System Overview
+---------------
+
+The project involves building a system where users can upload GWAS summary statistics files, query allele frequencies from gnomAD using Hail, merge the data, and apply R-based methods within Python. The system architecture leverages task queues using Celery and Redis for handling asynchronous tasks and Docker Compose for resource-efficient deployment. The project will run on a Google Cloud Platform virtual machine.
 
 1. **Flask Web Server**  
    The web server handles incoming user requests and manages file uploads. Once a user uploads their GWAS summary statistics file, it passes off the processing work to Celery workers.
