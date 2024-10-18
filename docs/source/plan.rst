@@ -7,7 +7,7 @@ Plan
 -------------------
 
 **Title:**  
-GWAS Data Processing with Python and R Integration
+Case and Control Estimation Graphical User Interface - Data Harmonizing and Integration via Python
 
 **Objective:**
 The goal of this project is to create a web based user interface, where researchers can upload their GWAS summary statistics file in Variant Call Format (vcf) and recapitulate case and control allele frequencies (AF) in their dataset. The system will query gnomAD to pull and merge required fields needed to compute the case and contol allele frequencies, specifically superpopulation minor allele frequencies.
@@ -55,7 +55,7 @@ The following outlines the scope of requirements and tools used, necessary for t
   * Docker Compose for file system management and resource relationships amongst tasks.
 * **Hosting:** Google Cloud Platform (GCP) Virtual Machine and Dataproc.
 
-1. User Stories
+2. User Stories
 ---------------
 
 * As a researcher, I want to upload a GWAS summary statistics file and receive a merged file with case and control allele frequencies so that I can perform further analysis efficiently.
@@ -63,7 +63,7 @@ The following outlines the scope of requirements and tools used, necessary for t
 * As a data scientist, I want an efficient system to apply R methods to large merged datasets directly from Python, allowing me to leverage both languages for analysis.
 * As a security-conscious user, I want my uploaded data to be deleted after processing to ensure privacy.
 
-1. System Architecture
+3. System Architecture
 -----------------------
 
 **High-Level Components:**
@@ -83,7 +83,7 @@ The following outlines the scope of requirements and tools used, necessary for t
 4. R methods are applied to the merged data using `rpy2` or an R script.
 5. Processed results are returned with the ability to be downloaded, and the uploaded data is deleted.
 
-1. Data Structures and Algorithms
+4. Data Structures and Algorithms
 ---------------------------------
 
 **Data Models:**
@@ -116,7 +116,7 @@ The following outlines the scope of requirements and tools used, necessary for t
 * **Merging Algorithm:** Match GWAS records with gnomAD records based on chromosome/position pairs and allele.
 * **R Methods:** R methods are applied via Python using `rpy2` or script execution.
 
-1. Development Roadmap
+5. Development Roadmap
 ----------------------
 
 **Milestones:**
