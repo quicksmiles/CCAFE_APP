@@ -50,6 +50,7 @@ vcf_upload <- function(vcf_file) {
     # Select relevant columns to display
     progress$inc(0.3, detail = "Data Loaded Successfully")
     vcf_data <- cbind(vcf@fix[, c("CHROM", "POS", "REF", "ALT", "QUAL", "FILTER")], info)
+    colnames(vcf_data) <- c("chrom", "pos", "ref", "alt", "qual", "filter", "ac", "an", "af")
     vcf_dt <- as.data.table(vcf_data)
     vcf_dt
     
@@ -74,6 +75,8 @@ text_upload <- function(text_file) {
     # Read the VCF file using fread
     
     text_data <- fread(cmd = paste("gzip -dc", file_path), header = TRUE, sep = "\t")
+    colnames(text_data)[1:4] <- c("chrom", "pos", "ref", "alt")
+    text_data$chrom <- ifelse(grepl("^chr", text_data$chrom), gsub("^chr", "", text_data$chrom), text_data$chrom) 
     # Filter necessary columns
     progress$inc(0.4, detail = "Parsing necessary fields")
     text_dt <- as.data.table(text_data)
@@ -92,9 +95,15 @@ upload_file <- function(file, file_name, file_path) {
   print(ext)
   switch(ext,
          "bgz" = return(vcf_upload(file)),
-         "gz" = ifelse(grepl("\\.text\\.gz$", file_name) || grepl("\\text\\.gz$", file_name), 
+         "gz" = ifelse(grepl("\\.txt\\.gz$", file_name) || grepl("\\.text\\.gz$", file_name),
                        return(text_upload(file)),
-                       validate("Invalid file: Please upload a gzip file")),
-         validate("Invalid file: Please upload a gzip file")
+                       validate("Invalid file: Please upload a .txt or .text gzip file")),
+         validate("Invalid file: Please upload a a .txt or .text gzip file")
   )
+}
+
+save_file <- function(file_data, output_dir = "../CCAFE/", output_name = "uploaded_user_file.txt.gz") {
+  new_path <- file.path(output_dir, output_name)
+  fwrite(file_data, new_path, sep = "\t", compress = "gzip")
+  return(new_path)
 }

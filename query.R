@@ -9,7 +9,7 @@ library(tidyverse)
 # intro to ratelimitr:
 # https://cran.r-project.org/web/packages/ratelimitr/vignettes/introduction.html
 library(ratelimitr)
-
+#df <- read.delim(file = "/Users/hugolemus/Downloads/pheno_295_EUR.txt.gz", header = TRUE, sep = "\t")
 gnomad_api_url <- Sys.getenv("GNOMAD_API_URL", unset="https://gnomad.broadinstitute.org/api")
 
 # build a connection object to consume gnomad's graphql API
@@ -54,7 +54,8 @@ qry$query(
 # throttle the function to 10 requests per 60 seconds
 # per stated limits at https://gnomad.broadinstitute.org/data#api
 exec_query <- limit_rate(
-  function(args = list(chrom = "17", start = 49210411, stop = 49210412)) {
+  function(args) {
+    
     tryCatch({
       x <- con$exec(qry$queries$VariantsInRange, args)
       return(jsonlite::fromJSON(x))
@@ -71,9 +72,86 @@ exec_query <- limit_rate(
   rate(n = 10, period = 60)
 )
 
-gnomAD_data <- exec_query(list(chrom = "17", start = 49210411, stop = 49210412))
-joint_data <- gnomAD_data$data$region$variants$joint
+# Function to read input file and generate query ranges
+generate_ranges <- function(file_path, range_size = 100000) {
+  range_size = 100000
+  data <- read.delim(file_path, header = TRUE, sep = "\t")
+  #data <- as.data.table(data)
+  # Extract unique chromosome and position ranges
+  ranges <- data %>%
+    group_by(chrom) %>%
+    summarise(
+      min_pos = min(pos),
+      max_pos = max(pos),
+      .groups = 'drop'
+    ) %>%
+    rowwise() %>%
+    do({
+      chrom <- .$chrom
+      start_positions <- seq(.$min_pos, .$max_pos, by = range_size)
+      data.frame(
+        chrom = chrom,
+        start = start_positions,
+        stop = pmin(start_positions + range_size - 1, .$max_pos)
+      )
+    }) %>%
+    ungroup()
+  
+  # ranges <- as.data.table(ranges)
+  # 
+  # setkey(ranges, chrom, start, stop)
+  # ranges <- ranges[
+  #   data, 
+  #   on = .(chrom, start <= pos, stop >= pos), 
+  #   nomatch = 0
+  # ]
+  # Iterate over each row of the ranges and check that 
+  # data$pos values fall between the start/stop ranges
+  # If TRUE keeps range start/stop values otherwise discards
+  ranges$keep <- sapply(seq_len(nrow(ranges)), function(i) {
+    any(data$chrom == ranges$chrom[i] & data$pos >= ranges$start[i] & data$pos <= ranges$stop[i])
+  })
 
-print(
-  as.data.frame(gnomAD_data)
-)
+  # Filter the ranges dataframe
+  ranges <- ranges[ranges$keep, ]
+  ranges$keep <- NULL  # Drop the helper column
+  
+  return(ranges)
+}
+
+# Read the provided file and generate ranges
+file_path <- "../CCAFE/uploaded_user_file.txt.gz"  # Update this with the correct path
+ranges <- generate_ranges(file_path)
+
+# Query gnomAD API for each range and store the results
+full_query_runtime <- system.time({
+  results <- list()
+  for (i in 1:nrow(ranges)) {
+    message("Querying range ", i, " of ", nrow(ranges))
+    args <- list(
+      chrom = as.character(ranges$chrom[i]),
+      start =  as.integer(ranges$start[i]),
+      stop = as.integer(ranges$stop[i])
+    )
+    
+    result <- exec_query(args)
+    if (!is.null(result)) {
+      results[[i]] <- result
+    }
+  }
+})
+# Display system run time for query 
+print(full_query_runtime)
+
+# Combine all variant query results from all generated range values
+query_results <- bind_rows(lapply(results, function(res){
+  if (!is.null(res$data$region$variants)) {
+    variants <- as.data.frame(res$data$region$variants)
+    #return(variants)
+  } else {
+    NULL
+  }
+}))
+
+# Start merging process here
+# Here we can apply a function where from the query we only extract the variants in the uploaded file before further processing

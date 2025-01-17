@@ -14,7 +14,7 @@ upload_ui <- fluidPage(
     shinyFeedback::useShinyFeedback(),
     sidebarLayout(
         sidebarPanel(
-            fileInput("file", "Choose a VCF File (max 1GB)",
+            fileInput("file", "Choose a VCF File (max 512 MB)",
                       accept = c(".gz", ".bgz")),
             textOutput("file_info"),
             textOutput("status"),

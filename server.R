@@ -21,10 +21,12 @@ upload_server <- function(input, output, session) {
               "| Size:", format(input$file$size / 1024^2, digits = 2), "MB")
     })
     
+    # Upload user file
     file_data <- reactive({
         req(input$file)
         upload_file(input$file, input$file$name, input$file$path)
     })
+    
     
     # Output status messages for user feedback
     output$status <- renderText({
@@ -34,12 +36,31 @@ upload_server <- function(input, output, session) {
             "VCF file loaded successfully!"
         }
     })
-    
+
     # Display a preview of the VCF data
     output$vcf_preview <- renderTable({
         req(file_data())
         head(file_data(), 10)  # Display the first 10 rows as a preview
     })
+
+   
+    # Temporarily save user uploaded file into disk space
+    observeEvent(file_data(), {
+        req(file_data())
+        saved_file <- tryCatch(
+            save_file(file_data()),
+            error = function(e) {
+                showNotification(e$message, type = "error")
+                return(NULL)
+            }
+        )
+        if (!is.null(saved_file)) {
+            output$file_info <- renderText({
+                paste("File succesfully saved at:", saved_file)
+            })
+        }
+    })
+    
     # Limit the file size a user can upload
     options(shiny.maxRequestSize = (1024^3)/2)
 }
