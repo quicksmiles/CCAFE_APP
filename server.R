@@ -1,6 +1,6 @@
 #
-# This is the server logic of a Shiny web application. You can run the
-# application by clicking 'Run App' above.
+# This is the server logic for the CCAFE Shiny web application. You can run the
+# application by clicking 'Run App' in R Studio or by visiting [link].
 #
 # Find out more about building applications with Shiny here:
 #
@@ -13,7 +13,7 @@ library(future)
 plan(multisession)
 # Link upload.R functions to server.R file
 source("upload.R", local = TRUE)
-# Define server logic required to draw a histogram
+# Define server logic required to upload a file
 upload_server <- function(input, output, session) {
     output$file_info <- renderText({
         req(input$file)
@@ -61,6 +61,6 @@ upload_server <- function(input, output, session) {
         }
     })
     
-    # Limit the file size a user can upload
+    # Limit the file size a user can upload to 512MB
     options(shiny.maxRequestSize = (1024^3)/2)
 }
