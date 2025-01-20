@@ -1,6 +1,6 @@
 #
 # This file is a starting point toward functions that will serve to merge
-# a users gzipped file data with gnomADs gh38 version 4.1.0 population specific data. 
+# a users gzipped file data with gnomADs GRCh38 version 4.1.0 population specific data. 
 # This will achieve our overall goal of applying CCAFE methods to a users data.
 #
 # Further research, development, and code readability is required.

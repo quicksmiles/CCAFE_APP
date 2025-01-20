@@ -4,8 +4,9 @@
 #
 # Find out more about CCAFE methods and their use here:
 #
-#       https://github.com/wolffha/CCAFE/
+#       https://wolffha.github.io/CCAFE_documentation/
 #
+
 library(shiny)
 library(vcfR)
 library(data.table)

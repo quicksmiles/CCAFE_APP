@@ -9,12 +9,15 @@
 
 library(shiny)
 library(future)
+
 # Use multiple sessions for parallel processing
 plan(multisession)
 # Link upload.R functions to server.R file
 source("upload.R", local = TRUE)
+
 # Define server logic required to upload a file
 upload_server <- function(input, output, session) {
+    # Output info messages for user uploaded file
     output$file_info <- renderText({
         req(input$file)
         paste("File Name:", input$file$name,
