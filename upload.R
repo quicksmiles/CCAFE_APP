@@ -1,15 +1,11 @@
 #
-# This file provides functions utilized by server.R that aims
-# to facilitate the read and upload of user files into CCAFE app.
+# This file provides functions utilized by file_upload.R that aims
+# to facilitate the read and upload of user files into CCAFE App.
 #
 # Find out more about CCAFE methods and their use here:
 #
 #       https://wolffha.github.io/CCAFE_documentation/
 #
-
-library(shiny)
-library(vcfR)
-library(data.table)
 
 
 extract_info_fields <- function(vcf, elements) {
@@ -61,27 +57,31 @@ vcf_upload <- function(vcf_file) {
   })
 }
 
+# Read the text file in chunks
 text_upload <- function(text_file) {
   # Initialize the progress indicator
   progress <- shiny::Progress$new()
   on.exit(progress$close())
-  progress$set(message = "Processing VCF File", value = 0)
+  progress$set(message = "Processing File", value = 0)
   
   tryCatch({
     file_path <- text_file$datapath
     
-    # Using fread to read the VCF file
+    # Using fread to read the user uploaded text file
     progress$inc(0.2, detail = "Reading VCF file")
     
-    # Read the VCF file using fread
-    
+    # Read the text file using fread to unzip first
+    # Filter and alter columns
     text_data <- fread(cmd = paste("gzip -dc", file_path), header = TRUE, sep = "\t")
+    # Rename the first 4 columns of the file as chrom, pos, ref, alt
     colnames(text_data)[1:4] <- c("chrom", "pos", "ref", "alt")
+    # Alter the row values in the chrom column if they include "chr"
+    # remove "chr" from string so only the number value remains
     text_data$chrom <- ifelse(grepl("^chr", text_data$chrom), gsub("^chr", "", text_data$chrom), text_data$chrom) 
-    # Filter necessary columns
+    # Convert processed uploaded file data into a data.table structure
     progress$inc(0.4, detail = "Parsing necessary fields")
     text_dt <- as.data.table(text_data)
-    
+    # 
     progress$inc(0.3, detail = "Data Loaded Successfully")
     text_dt
     
@@ -91,9 +91,9 @@ text_upload <- function(text_file) {
   })
 }
 
+
 upload_file <- function(file, file_name, file_path) {
   ext <- tools::file_ext(file_name)
-  print(ext)
   switch(ext,
          "bgz" = return(vcf_upload(file)),
          "gz" = ifelse(grepl("\\.txt\\.gz$", file_name) || grepl("\\.text\\.gz$", file_name),
@@ -102,6 +102,7 @@ upload_file <- function(file, file_name, file_path) {
          validate("Invalid file: Please upload a a .txt or .text gzip file")
   )
 }
+
 
 save_file <- function(file_data, output_dir = "../CCAFE/", output_name = "uploaded_user_file.txt.gz") {
   new_path <- file.path(output_dir, output_name)
