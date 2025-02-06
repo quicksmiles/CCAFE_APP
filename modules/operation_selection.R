@@ -19,7 +19,7 @@ operationSelectionUI <- function(id) {
       numericInput(ns("N_case_se"), "Number of cases:", value = NULL),
       numericInput(ns("N_control_se"), "Number of controls:", value = NULL),
       selectInput(ns("OR_colname_se"), "Odds Ratio or Beta Column:", choices = NULL),
-      selectInput(ns("SE_colname"), "SE Column:", choices = NULL),
+      selectInput(ns("SE_colname_se"), "SE Column:", choices = NULL),
       selectInput(ns("chromosome_colname"), "Chromosome Column:", choices = NULL),
       selectInput(ns("position_colname"), "Position Column:", choices = NULL),
       actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary")
@@ -28,10 +28,14 @@ operationSelectionUI <- function(id) {
   )
 }
 
-operationSelectionServer <- function(id, uploaded_data, column_names) {
+operationSelectionServer <- function(id, uploaded_data, column_names, main_session) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     results <- reactiveVal()
+    
+    selected_super_population <- reactive({
+      input$super_population  # Automatically updates when user selects a value
+    })
     
     observeEvent(column_names(), {
       req(column_names())
@@ -45,14 +49,14 @@ operationSelectionServer <- function(id, uploaded_data, column_names) {
         oddRationBeta = NULL
       }
       
-      updateNumericInput(session, "N_case", value = uploaded_data()$n_cases[1])
-      updateNumericInput(session, "N_control", value = uploaded_data()$n_controls[1])
-      updateNumericInput(session, "N_case_se", value = uploaded_data()$n_cases[1])
-      updateNumericInput(session, "N_control_se", value = uploaded_data()$n_controls[1])
+      updateNumericInput(session, "N_case", value = input$N_case)
+      updateNumericInput(session, "N_control", value = input$N_control)
+      updateNumericInput(session, "N_case_se", value = input$N_case_se)
+      updateNumericInput(session, "N_control_se", value = input$N_control_se)
       updateSelectInput(session, "OR_colname", choices = column_names(), selected = oddRatioBeta)
       updateSelectInput(session, "OR_colname_se", choices = column_names(), selected = oddRatioBeta)
-      updateSelectInput(session, "AF_total_colname", choices = column_names(), selected = "true_maf_pop")
-      updateSelectInput(session, "SE_colname", choices = column_names(), selected = "SE")
+      updateSelectInput(session, "AF_total_colname", choices = column_names(), selected = "AF_total")
+      updateSelectInput(session, "SE_colname_se", choices = column_names(), selected = "SE")
       updateSelectInput(session, "chromosome_colname", choices = column_names(), selected = "chrom")
       updateSelectInput(session, "position_colname", choices = column_names(), selected = "pos")
     })
@@ -68,73 +72,79 @@ operationSelectionServer <- function(id, uploaded_data, column_names) {
       # updateNavbarPage(session, "CCAFE App", selected = "Step3")
       results(results_af)
     })
-
-    # observeEvent(input$run_casecontrolse, {
-    #   req(uploaded_data())
-    #   results_se <- CaseControl_SE(data = uploaded_data(),
-    #                                N_case = input$N_case_se,
-    #                                N_control = input$N_control_se,
-    #                                OR_colname = input$OR_colname_se,
-    #                                SE_colname = input$SE_colname,
-    #                                chromosome_colname = input$chromosome_colname,
-    #                                sex_chromosomes = FALSE,
-    #                                position_colname = input$position_colname,
-    #                                do_correction = FALSE)
-    #   CaseControl_SE()
-    #   results(results_se)
-    # })
-
+    
     observeEvent(input$run_casecontrolse, {
       # Move to email input page
       # updateNavbarPage(session, "CCAFE", selected = "Step3")
       req(uploaded_data())  # Ensure the user has uploaded data
-
+      req(selected_super_population())
+      
+      selected_population <- selected_super_population()
       # Show a modal spinner while the process runs
-      show_modal_spinner(spin = "self-building-square", text = "Processing query in the background...")
+      #show_modal_spinner(spin = "self-building-square", text = "Processing query in the background...")
 
       # Run merge.R in the background
-      merge_process <- callr::r_bg(function() {
-        source("../CCAFE/merge.R") # Source the merge.R script
-        maf_population_results # Execute the merge function
-      })
-
+      merge_process <- callr::r_bg(
+        function(selected_population) {
+          source("../CCAFE/merge.R") # Source the merge.R script
+          final_results(selected_population) # Execute the merge function
+        }, 
+        args = list(selected_population)
+      )
+      print(processx::poll(list(merge_process), 1000))
       # Poll for completion of merge process
       observe({
-        if (merge_process$is_alive()) {
+        if (merge_process$poll_io(0)["process"] != "ready") {
           # If process is still running, don't do anything yet
-          invalidateLater(1000, session) # Poll every 1 second
+          print("still querying...")
+          print(processx::poll(list(merge_process), 60000))
+          print(merge_process$get_exit_status())
+          print(merge_process$read_error())
+          print(merge_process$read_output())
+          showNotification("Still querying...", type = "message")
+          invalidateLater(60000, session) # Poll every minute
           # Navigate to the email input page
         } else {
+          print("completed query succesful...")
+          print(merge_process$get_exit_status())
           # Process completed
           if (merge_process$get_exit_status() == 0) {
+            print("Entering CaseControl_SE calculation process")
+            showNotification("Completed querying data", type = "message")
+
             super_population_maf <- merge_process$get_result() # Get the results
-            corr_data <- data.frame(CHR = super_population_maf$populations$chrom,
-                                    POS = super_population_maf$populations$pos,
-                                    proxy_MAF = super_population_maf$populations$paste0("MAF_", input$super_population)
-            )
+            selected_MAF_col <- paste0("MAF_", selected_population)
+            corr_data <- data.frame(CHR = as.character(super_population_maf$chrom),
+                                    POS = super_population_maf$pos,
+                                    proxy_MAF = super_population_maf[[selected_MAF_col]]
+                                    )
+            
+            print(typeof(corr_data$CHR))
+            
             # Perform CaseControl_SE operation
             results_se <- CaseControl_SE(data = uploaded_data(),
-                                         N_case = input$N_case_se,
-                                         N_control = input$N_control_se,
+                                         N_case = as.double(input$N_case_se),
+                                         N_control = as.double(input$N_control_se),
                                          OR_colname = input$OR_colname_se,
                                          SE_colname = input$SE_colname_se,
                                          chromosome_colname = input$chromosome_colname,
                                          position_colname = input$position_colname,
                                          do_correction = TRUE,
                                          correction_data = corr_data,
-                                         sex_chromosomes = FALSE
+                                         sex_chromosomes = FALSE,
+                                         remove_sex_chromosomes = TRUE
                                          )
 
             # Store results in session
-            session$userData$results_se <- results_se
-            results(session$user$results_se)
+            # session$userData$results_se <- results_se
+            results(results_se)
             # Notify the user and allow navigation to the next step
-            remove_modal_spinner()
+            print("ControlCase_SE method was executed successfully!")
             showNotification("Process completed successfully!", type = "message")
 
           } else {
             # Handle errors
-            remove_modal_spinner()
+            print("Error occurred after querying and merging was finished, did not go into CC_SE")
             showNotification("Error occurred during processing.", type = "error")
           }
         }
@@ -144,7 +154,8 @@ operationSelectionServer <- function(id, uploaded_data, column_names) {
     # Display the first 10 rows of the results dataframe
     output$results_preview <- renderTable({
               req(results())
-              head(results(), 10)  # Display the first 10 rows as a preview
+              results_formatted <- format(x = results(), digits = 4, scientific = TRUE)
+              head(results_formatted, 10)  # Display the first 10 rows as a preview
           })
     
     return(results)

@@ -33,12 +33,12 @@ qry$query(
     region(chrom: $chrom, start: $start, stop: $stop, reference_genome: GRCh38) {
       chrom, start, stop, reference_genome,
 
-      variants(dataset: gnomad_r4) {
+      variants(dataset: gnomad_r3) {
         chrom
         pos
         ref
         alt
-        joint {
+        genome {
           populations {
             id
             ac

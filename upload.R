@@ -48,7 +48,8 @@ vcf_upload <- function(vcf_file) {
     progress$inc(0.3, detail = "Data Loaded Successfully")
     vcf_data <- cbind(vcf@fix[, c("CHROM", "POS", "REF", "ALT", "QUAL", "FILTER")], info)
     colnames(vcf_data) <- c("chrom", "pos", "ref", "alt", "qual", "filter", "ac", "an", "af")
-    vcf_dt <- as.data.table(vcf_data)
+    vcf_data <- vcf_data[complete.cases(vcf_data), ]
+    vcf_dt <- as.data.frame(vcf_data)
     vcf_dt
     
   }, error = function(e) {
@@ -80,7 +81,8 @@ text_upload <- function(text_file) {
     text_data$chrom <- ifelse(grepl("^chr", text_data$chrom), gsub("^chr", "", text_data$chrom), text_data$chrom) 
     # Convert processed uploaded file data into a data.table structure
     progress$inc(0.4, detail = "Parsing necessary fields")
-    text_dt <- as.data.table(text_data)
+    text_data <- text_data[complete.cases(text_data), ]
+    text_dt <- as.data.frame(text_data)
     # 
     progress$inc(0.3, detail = "Data Loaded Successfully")
     text_dt

@@ -7,7 +7,7 @@ fileUploadUI <- function(id) {
     actionButton(ns("process_file"), "Process File"),
     tableOutput(ns("file_preview")),
     tags$div(
-      actionButton(ns("go_to_page2"), "Save File", class = "btn-primary"),
+      actionButton(ns("go_to_page2"), "Continue", class = "btn-primary"),
       style = "position: fixed; bottom: 20px; right: 20px;"
     )
   )
