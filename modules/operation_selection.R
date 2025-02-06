@@ -24,7 +24,7 @@ operationSelectionUI <- function(id) {
       selectInput(ns("position_colname"), "Position Column:", choices = NULL),
       actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary")
     ),
-    tableOutput(ns("results_preview"))
+    DTOutput(ns("results_preview"))
   )
 }
 
@@ -152,10 +152,18 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
     })
     
     # Display the first 10 rows of the results dataframe
-    output$results_preview <- renderTable({
+    output$results_preview <- renderDT({
               req(results())
+              req(column_names())
+             
               results_formatted <- format(x = results(), digits = 4, scientific = TRUE)
-              head(results_formatted, 10)  # Display the first 10 rows as a preview
+              
+              # Display the first 10 rows as a preview and highlight the newly generated columns
+              datatable(head(results_formatted, 10), options = list(dom = 't')) %>%
+                formatStyle(
+                  columns = c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])),
+                  color = "red"
+                  )
           })
     
     return(results)
