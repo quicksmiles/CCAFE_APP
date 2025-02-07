@@ -106,7 +106,7 @@ upload_file <- function(file, file_name, file_path) {
 }
 
 
-save_file <- function(file_data, output_dir = "../CCAFE/", output_name = "uploaded_user_file.txt.gz") {
+save_file <- function(file_data, output_dir = "../CCAFE/", output_name = "uploaded_user_file.text.gz") {
   new_path <- file.path(output_dir, output_name)
   fwrite(file_data, new_path, sep = "\t", compress = "gzip")
   return(new_path)

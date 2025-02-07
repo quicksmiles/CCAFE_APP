@@ -24,7 +24,9 @@ operationSelectionUI <- function(id) {
       selectInput(ns("position_colname"), "Position Column:", choices = NULL),
       actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary")
     ),
-    DTOutput(ns("results_preview"))
+    
+    DTOutput(ns("results_preview")),
+    downloadButton(ns("download_results"))
   )
 }
 
@@ -165,6 +167,16 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
                   color = "red"
                   )
           })
+    
+    output$download_results <- downloadHandler(
+      
+      filename = function() {
+        paste0("case_control_AF_estimates", ".text.gz")
+      },
+      content = function(file) {
+        fwrite(results(), file, sep = "\t", compress = "gzip")
+      }
+    )
     
     return(results)
   })
