@@ -164,7 +164,7 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
               datatable(head(results_formatted, 10), options = list(dom = 't')) %>%
                 formatStyle(
                   columns = c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])),
-                  color = "red"
+                  color = "green"
                   )
           })
     
