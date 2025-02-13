@@ -1,5 +1,5 @@
 library(httr)
-# "738998600f5aa915924b34c23c322c35-1654a412-df26eefd"
+
 send_email <- function(email, file_path) {
   mailgun_api_key <- "738998600f5aa915924b34c23c322c35-1654a412-df26eefd"
   domain <- "sandbox6c200fba09cb40fabfef60ca08251446.mailgun.org"
