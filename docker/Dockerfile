@@ -28,9 +28,11 @@ RUN mkdir -p /opt/renv/library/ && \
 ENV RENV_PATHS_LIBRARY=/opt/renv/library
 ENV RENV_PATHS_CACHE=/opt/renv/cache
 
-# install packages, then isolate them from the global cache so the symlinks
-# to the build-time volume that's valid for just this RUN command
-# doesn't break when the volume is removed after this line ends.
+# set libPaths() to our project library via load(), install packages via
+# restore(), then isolates the project via isolate().
+# (the isolate() call is to separate the installed packages from the global cache
+# so the symlinks to the build-time volume that's valid for just this RUN
+# command doesn't break when the volume is removed after this line ends.)
 # (just in case, we move the cache to a temp folder, then copy it back into the
 # image from there, since the build-time volume's contents would no longer be
 # available after it's unmounted.)
