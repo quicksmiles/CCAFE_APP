@@ -10,7 +10,8 @@ operationSelectionUI <- function(id) {
       numericInput(ns("N_control"), "Number of controls:", value = NULL),
       selectInput(ns("OR_colname"), "Odds Ratio or Beta Column:", choices = NULL),
       selectInput(ns("AF_total_colname"), "Total AF Column:", choices = NULL),
-      actionButton(ns("run_casecontrolaf"), "Run CaseControl_AF", class = "btn-primary")
+      actionButton(ns("run_casecontrolaf"), "Run CaseControl_AF", class = "btn-primary"),
+      downloadButton(ns("download_results"))
     ),
     conditionalPanel(
       condition = paste0("input['", ns("operation"), "'] == 'SE'"),
@@ -22,11 +23,11 @@ operationSelectionUI <- function(id) {
       selectInput(ns("SE_colname_se"), "SE Column:", choices = NULL),
       selectInput(ns("chromosome_colname"), "Chromosome Column:", choices = NULL),
       selectInput(ns("position_colname"), "Position Column:", choices = NULL),
+      textInput(ns("user_email"), "Email", placeholder = "Enter your email"),
       actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary")
     ),
     
-    DTOutput(ns("results_preview")),
-    downloadButton(ns("download_results"))
+    DTOutput(ns("results_preview"))
   )
 }
 
@@ -80,77 +81,66 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
       # updateNavbarPage(session, "CCAFE", selected = "Step3")
       req(uploaded_data())  # Ensure the user has uploaded data
       req(selected_super_population())
+      req(input$user_email)
       
+      uploaded_data <- uploaded_data()
       selected_population <- selected_super_population()
+      
+      user_email <- input$user_email
+      N_case_se <- input$N_case_se
+      N_control_se <- input$N_control_se
+      OR_colname_se <- input$OR_colname_se
+      SE_colname_se <- input$SE_colname_se
+      chromosome_colname <- input$chromosome_colname
+      position_colname <- input$position_colname
+      
       # Show a modal spinner while the process runs
       #show_modal_spinner(spin = "self-building-square", text = "Processing query in the background...")
 
       # Run merge.R in the background
-      merge_process <- callr::r_bg(
-        function(selected_population) {
-          source("../CCAFE/merge.R") # Source the merge.R script
-          final_results(selected_population) # Execute the merge function
+      handle_se_process <- callr::r_bg(
+        function(selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
+                 OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {
+          source("../CCAFE/handle_casecontrolse.R") # Source the merge.R script
+          handle_cc_se(selected_population, user_email, uploaded_data, N_case_se, N_control_se,
+                       OR_colname_se, SE_colname_se, chromosome_colname, position_colname)# Execute function
         }, 
-        args = list(selected_population)
+        args = list(selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
+                    OR_colname_se, SE_colname_se, chromosome_colname, position_colname), 
+        supervise = TRUE
       )
-      print(processx::poll(list(merge_process), 1000))
+      print(processx::poll(list(handle_se_process), 1000))
       # Poll for completion of merge process
       observe({
-        if (merge_process$poll_io(0)["process"] != "ready") {
+        if (handle_se_process$poll_io(0)["process"] != "ready") {
           # If process is still running, don't do anything yet
           print("still querying...")
-          print(processx::poll(list(merge_process), 60000))
-          print(merge_process$get_exit_status())
-          print(merge_process$read_error())
-          print(merge_process$read_output())
+          print(processx::poll(list(handle_se_process), 60000))
+          print(handle_se_process$get_exit_status())
+          print(handle_se_process$read_error())
+          print(handle_se_process$read_output())
           showNotification("Still querying...", type = "message")
           invalidateLater(60000, session) # Poll every minute
           # Navigate to the email input page
         } else {
           print("completed query succesful...")
-          print(merge_process$get_exit_status())
+          print(handle_se_process$get_exit_status())
           # Process completed
-          if (merge_process$get_exit_status() == 0) {
-            print("Entering CaseControl_SE calculation process")
-            showNotification("Completed querying data", type = "message")
-
-            super_population_maf <- merge_process$get_result() # Get the results
-            selected_MAF_col <- paste0("MAF_", selected_population)
-            corr_data <- data.frame(CHR = as.character(super_population_maf$chrom),
-                                    POS = super_population_maf$pos,
-                                    proxy_MAF = super_population_maf[[selected_MAF_col]]
-                                    )
-            
-            print(typeof(corr_data$CHR))
-            
-            # Perform CaseControl_SE operation
-            results_se <- CaseControl_SE(data = uploaded_data(),
-                                         N_case = as.double(input$N_case_se),
-                                         N_control = as.double(input$N_control_se),
-                                         OR_colname = input$OR_colname_se,
-                                         SE_colname = input$SE_colname_se,
-                                         chromosome_colname = input$chromosome_colname,
-                                         position_colname = input$position_colname,
-                                         do_correction = TRUE,
-                                         correction_data = corr_data,
-                                         sex_chromosomes = FALSE,
-                                         remove_sex_chromosomes = TRUE
-                                         )
-
-            # Store results in session
-            # session$userData$results_se <- results_se
+          if (handle_se_process$get_exit_status() == 0) {
+            print("Completed querying data and running CaseControl_SE()")
+            results_se <- handle_se_process$get_result()
             results(results_se)
             # Notify the user and allow navigation to the next step
             print("ControlCase_SE method was executed successfully!")
-            showNotification("Process completed successfully!", type = "message")
-
+            # showNotification("Process completed successfully!", type = "message")
+            
           } else {
             # Handle errors
             print("Error occurred after querying and merging was finished, did not go into CC_SE")
-            showNotification("Error occurred during processing.", type = "error")
+            # showNotification("Error occurred during processing.", type = "error")
           }
         }
-      })
+      })  
     })
     
     # Display the first 10 rows of the results dataframe
@@ -169,7 +159,6 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
           })
     
     output$download_results <- downloadHandler(
-      
       filename = function() {
         paste0("case_control_AF_estimates", ".text.gz")
       },
