@@ -19,7 +19,7 @@ library(purrr)
 library(CCAFE)
 # Link query.R file and its functions to be executed once merge.R is run 
 source("query.R", local = TRUE)
-uploaded_file_path = "../CCAFE/uploaded_user_file.text.gz"
+uploaded_file_path = "/tmp/CCAFE/uploaded_user_file.text.gz"
 user_data <- read.delim(uploaded_file_path, header = TRUE, sep = "\t")
 # merge user data and gnomAD data by chromosome, position combination values
 combined_results <- merge(user_data, query_results, by = c("chrom", "pos"))
