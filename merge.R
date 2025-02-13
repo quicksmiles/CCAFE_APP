@@ -6,7 +6,7 @@
 # Further research, development, and code readability is required.
 #
 library(data.table)
-# CaseControlAF methods will be applied to the 'joined' dataset 
+# CaseControlSE methods will be applied to the 'joined' dataset 
 # after successful query and merge functionality 
 
 # To install this package from GitHub:
@@ -19,18 +19,13 @@ library(data.table)
 library(CCAFE)
 # Link query.R file and its functions to be executed once merge.R is run 
 source("query.R", local = TRUE)
-uploaded_file_path = "../CCAFE/uploaded_user_file.txt.gz"
+uploaded_file_path = "../CCAFE/uploaded_user_file.text.gz"
 user_data <- read.delim(uploaded_file_path, header = TRUE, sep = "\t")
 # merge sample data and gnomAD chr1 data by chromosome, position combination values
 combined_results <- merge(user_data, query_results, by = c("chrom", "pos"))
-# merge on correct ref and alt allele
-# combined_results <- combined_results[
-#   (combined_results$ref.x == combined_results$alt.y & combined_results$ref.x == combined_results$ref.y) |
-#   (combined_results$ref.x == combined_results$ref.y & combined_results$alt.x == combined_results$alt.y),
-# ]
 
 # This creates a data frame for each row in `variants` with extracted gnomAD population specific data
-population_results <- lapply(combined_results$joint, function(populations) {
+population_results <- lapply(combined_results$genome, function(populations) {
   # Combine all population data frames into one
   combined_pop <- do.call(rbind, populations)
   
@@ -94,18 +89,31 @@ maf_population_results <- lapply(af_population_results, function(maf_populations
   }
   return(maf_populations)
 })
+
+
+final_results <- function(user_selected_population){
+  pre_merged_results <- cbind(combined_results, maf_population_results$populations)
+
+  final_merge <- inner_join(user_data, pre_merged_results, by = c("chrom", "pos"), relationship = "many-to-many")
+
+  # merge on correct ref and alt allele
+  final_merge <- final_merge[
+   (final_merge$ref.x == final_merge$alt.y & final_merge$ref.x == final_merge$ref.y) |
+   (final_merge$ref.x == final_merge$ref.y & final_merge$alt.x == final_merge$alt.y),
+  ]
   
-# Create a unique data frame for each "pos", "ref", "alt" in variants
-final_results <- do.call(rbind, lapply(seq_along(combined_results$pos), function(i) {
-  # Extract row-specific population data
-  pop_data <- updated_population_results$populations[i, ]
+  #
+  start_col <- which(names(final_merge) == "alt")
+  end_col <- which(names(final_merge) == "afr_ac")
   
-  # Add columns for "pos", "ref", and "alt"
-  cbind(
-    combined_results,
-    pop_data
-  )
-}))
+  # Remove all columns in between start and end columns (excluding start and end)
+  final_merge <- final_merge[ , -((start_col + 1):(end_col - 1)), drop = FALSE]
+  
+  maf_column <- paste0("MAF_", user_selected_population)
+  # print(af_column)
+  final_merge <- final_merge[final_merge[[maf_column]] > 0.01, ]
+  return(final_merge)
+}
 
 # #### This was used to access a proxy gnomAD dataset ####
 # # access file path to sampled and organized proxy gnomAD data set from a 

@@ -33,12 +33,12 @@ qry$query(
     region(chrom: $chrom, start: $start, stop: $stop, reference_genome: GRCh38) {
       chrom, start, stop, reference_genome,
 
-      variants(dataset: gnomad_r4) {
+      variants(dataset: gnomad_r3) {
         chrom
         pos
         ref
         alt
-        joint {
+        genome {
           populations {
             id
             ac
@@ -120,7 +120,7 @@ generate_ranges <- function(file_path, range_size = 100000) {
 }
 
 # Read the provided file and generate ranges
-file_path <- "../CCAFE/uploaded_user_file.txt.gz"  # Update this with the correct path
+file_path <- "../CCAFE/uploaded_user_file.text.gz"  # Update this with the correct path
 ranges <- generate_ranges(file_path)
 
 # Query gnomAD API for each range and store the results
