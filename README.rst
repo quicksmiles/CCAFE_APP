@@ -10,6 +10,16 @@ development for the `Case and Control Allele Frequency Estimation <https://wolff
 public application. It includes a detailed proposal and revised documentaion that will be continuesly updated as the
 project develops.
 
-# Getting Started
+**Getting Started**
 
-Copy `.env.TEMPLATE` as `.env` and fill in any empty values with your information.
+The latest version can only be run locally and is intended for testing purposes. In etiher installation case you will need to copy ``.env.TEMPLATE`` as ``.env`` and fill in any empty values with your information.
+
+**Install via renv**
+
+Run locally within RStudio by cloning the repository and running ``renv::restore()`` from within the RStudio terminal. Open the ``app.R`` file and click on *Run App*.
+
+**Install via Docker**
+
+Download `Docker <https://docs.docker.com/get-started/introduction/get-docker-desktop/>`_ and download all files from this repository onto your local machine. Included will be the script file ``run_app.sh``. This file can be executed from your terminal (``./run_app.sh``) to host the app within the Docker container. To access the site once the container is running, click the local host site here `CCAFE <http://localhost:3850/ccafe/>`_.
+
+
