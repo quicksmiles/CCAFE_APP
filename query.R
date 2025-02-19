@@ -81,7 +81,7 @@ do_query <- function(uploaded_data) {
       region(chrom: $chrom, start: $start, stop: $stop, reference_genome: GRCh38) {
         chrom, start, stop, reference_genome,
 
-        variants(dataset: gnomad_r4_non_ukb) {
+        variants(dataset: gnomad_r4) {
           chrom
           pos
           ref

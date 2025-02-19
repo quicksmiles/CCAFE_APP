@@ -37,7 +37,7 @@ source("modules/operation_selection.R")
     
     navbarPage(
       id = "CCAFE",
-      title = tags$div(
+      title = tags$div("",
         tags$img(src = "https://raw.githubusercontent.com/wolffha/wolffha/refs/heads/main/images/CCAFE-hex.png",
                  width = 75,
                  height = 75
