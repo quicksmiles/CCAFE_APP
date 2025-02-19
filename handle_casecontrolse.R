@@ -14,7 +14,7 @@ save_results <- function(results, user_email) {
 handle_cc_se <- function(selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
                          OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {
   # Call merge.R final_results function to obtain gnomAD population data
-  super_population_results <- final_results(selected_population)
+  super_population_results <- do_merge(uploaded_data, selected_population)
   selected_MAF_col <- paste0("MAF_", selected_population)
   # Create the correction data dataframe required as an argument for CC_SE function
   corr_data <- data.frame(CHR = as.character(super_population_results$chrom),

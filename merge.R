@@ -19,81 +19,83 @@ library(purrr)
 library(CCAFE)
 # Link query.R file and its functions to be executed once merge.R is run 
 source("query.R", local = TRUE)
-uploaded_file_path = "/tmp/CCAFE/uploaded_user_file.text.gz"
-user_data <- read.delim(uploaded_file_path, header = TRUE, sep = "\t")
-# merge user data and gnomAD data by chromosome, position combination values
-combined_results <- merge(user_data, query_results, by = c("chrom", "pos"))
-combined_results <- combined_results %>% filter(map_lgl(combined_results$genome$populations, ~ !is.null(.)))
 
-# This creates a data frame for each row in `variants` with extracted gnomAD population specific data
-population_results <- lapply(combined_results$genome, function(populations) {
-  # Combine all population data frames into one
-  combined_pop <- do.call(rbind, populations)
-  
-  
-  # Reshape "ac" and "an" into separate columns for each "id"
-  reshaped_pop <- do.call(cbind, lapply(split(combined_pop, combined_pop$id), function(df) {
-    # Create columns like "amr_ac" and "amr_an"
-    data.frame(
-      ac = setNames(df$ac, paste(df$id[1], "ac")),
-      an = setNames(df$an, paste(df$id[1], "an"))
-    )
-  }))
-  colnames(reshaped_pop) <- gsub("\\.", "_", colnames(reshaped_pop))
-  return(reshaped_pop)
-  
-})
+do_merge <- function(uploaded_data, user_selected_population) {
+  # user_data <- read.delim(uploaded_file_path, header = TRUE, sep = "\t")
 
-# Iterate over each reshaped population data frame in the list
-af_population_results <- lapply(population_results, function(af_populations) {
-    # Identify unique population abbreviations based on column names
-    populations <- population_results$populations
-    pop_ids <- unique(sub("_.*", "", colnames(populations)))
-    # Iterate over population IDs to calculate allele frequencies
-    for (pop in pop_ids) {
-      ac_col <- paste0(pop, "_ac")
-      an_col <- paste0(pop, "_an")
-      af_col <- paste0("AF_", pop)
-      
-      # Check if both ac and an columns exist for the specified population
-      if (ac_col %in% colnames(populations) && an_col %in% colnames(populations)) {
-        # add calculated allele frequency values to existing population_results dataframe
-        af_populations[[af_col]] <- populations[[ac_col]] / populations[[an_col]]
-      } else {
-        af_populations[["AF_total"]] <- populations[["ac"]] / populations[["an"]]
-      }
-    }
-    return(af_populations)
-})
+  query_results <- do_query(uploaded_data)
 
-maf_population_results <- lapply(af_population_results, function(maf_populations) {
-  af_populations <- af_population_results$populations
-  matches <- grepl("^AF", colnames(af_populations))
-  af_ids <- sub("*AF_", "", colnames(af_populations[matches]))
-  
-  for(af in af_ids) {
-    af_col <- paste0("AF_", af)
-    maf_col <- paste0("MAF_", af)
-    is_maf_col <- paste0("isMAF_", af)
-    maf_ref_col <- paste0(af , "MAF_ref")
-    maf_alt_col <- paste0(af, "MAF_alt")
+  # merge user data and gnomAD data by chromosome, position combination values
+  combined_results <- merge(uploaded_data, query_results, by = c("chrom", "pos"))
+  combined_results <- combined_results %>% filter(map_lgl(combined_results$genome$populations, ~ !is.null(.)))
+
+  # This creates a data frame for each row in `variants` with extracted gnomAD population specific data
+  population_results <- lapply(combined_results$genome, function(populations) {
+    # Combine all population data frames into one
+    combined_pop <- do.call(rbind, populations)
     
-    # Check allele frequencies in af_population_results
-    # if population af greater than 0.5 it is not the minor allele frequency 
-    maf_populations[[maf_col]] <- ifelse(af_populations[[af_col]] > 0.5, 
-                                         1 - af_populations[[af_col]], 
-                                         af_populations[[af_col]])
-    maf_populations[[is_maf_col]] <- af_populations[[af_col]] <= 0.5
-    maf_populations[[maf_ref_col]] <- ifelse(af_populations[[af_col]] <= 0.5, 
-                                             combined_results$ref.y, combined_results$alt.y)
-    maf_populations[[maf_alt_col]] <- ifelse(af_populations[[af_col]] > 0.5, 
-                                             combined_results$ref.y, combined_results$alt.y)
-  }
-  return(maf_populations)
-})
+    
+    # Reshape "ac" and "an" into separate columns for each "id"
+    reshaped_pop <- do.call(cbind, lapply(split(combined_pop, combined_pop$id), function(df) {
+      # Create columns like "amr_ac" and "amr_an"
+      data.frame(
+        ac = setNames(df$ac, paste(df$id[1], "ac")),
+        an = setNames(df$an, paste(df$id[1], "an"))
+      )
+    }))
+    colnames(reshaped_pop) <- gsub("\\.", "_", colnames(reshaped_pop))
+    return(reshaped_pop)
+    
+  })
 
+  # Iterate over each reshaped population data frame in the list
+  af_population_results <- lapply(population_results, function(af_populations) {
+      # Identify unique population abbreviations based on column names
+      populations <- population_results$populations
+      pop_ids <- unique(sub("_.*", "", colnames(populations)))
+      # Iterate over population IDs to calculate allele frequencies
+      for (pop in pop_ids) {
+        ac_col <- paste0(pop, "_ac")
+        an_col <- paste0(pop, "_an")
+        af_col <- paste0("AF_", pop)
+        
+        # Check if both ac and an columns exist for the specified population
+        if (ac_col %in% colnames(populations) && an_col %in% colnames(populations)) {
+          # add calculated allele frequency values to existing population_results dataframe
+          af_populations[[af_col]] <- populations[[ac_col]] / populations[[an_col]]
+        } else {
+          af_populations[["AF_total"]] <- populations[["ac"]] / populations[["an"]]
+        }
+      }
+      return(af_populations)
+  })
 
-final_results <- function(user_selected_population){
+  maf_population_results <- lapply(af_population_results, function(maf_populations) {
+    af_populations <- af_population_results$populations
+    matches <- grepl("^AF", colnames(af_populations))
+    af_ids <- sub("*AF_", "", colnames(af_populations[matches]))
+    
+    for(af in af_ids) {
+      af_col <- paste0("AF_", af)
+      maf_col <- paste0("MAF_", af)
+      is_maf_col <- paste0("isMAF_", af)
+      maf_ref_col <- paste0(af , "MAF_ref")
+      maf_alt_col <- paste0(af, "MAF_alt")
+      
+      # Check allele frequencies in af_population_results
+      # if population af greater than 0.5 it is not the minor allele frequency 
+      maf_populations[[maf_col]] <- ifelse(af_populations[[af_col]] > 0.5, 
+                                          1 - af_populations[[af_col]], 
+                                          af_populations[[af_col]])
+      maf_populations[[is_maf_col]] <- af_populations[[af_col]] <= 0.5
+      maf_populations[[maf_ref_col]] <- ifelse(af_populations[[af_col]] <= 0.5, 
+                                              combined_results$ref.y, combined_results$alt.y)
+      maf_populations[[maf_alt_col]] <- ifelse(af_populations[[af_col]] > 0.5, 
+                                              combined_results$ref.y, combined_results$alt.y)
+    }
+    return(maf_populations)
+  })
+
   pre_merged_results <- cbind(combined_results, maf_population_results$populations)
 
   final_merge <- inner_join(user_data, pre_merged_results, by = c("chrom", "pos"), relationship = "many-to-many")
