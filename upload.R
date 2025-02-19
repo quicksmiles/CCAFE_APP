@@ -106,13 +106,15 @@ upload_file <- function(file, file_name, file_path) {
 }
 
 
-save_file <- function(file_data, output_dir = "/tmp/CCAFE/", output_name = "uploaded_user_file.text.gz") {
+save_file <- function(file_data, output_dir = "/tmp/CCAFE/") {
   # ensure the output folder exists
   if (!dir.exists(output_dir)) {
     dir.create(output_dir)
   }
 
-  new_path <- file.path(output_dir, output_name)
+  # creates a randomly-named file under output_dir (i.e., /tmp/CCAFE/)
+  # which ensures the file won't collide with others' uploaded files
+  new_path <- tempfile(tmpdir=output_dir)
   fwrite(file_data, new_path, sep = "\t", compress = "gzip")
   return(new_path)
 }
