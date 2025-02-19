@@ -3,7 +3,7 @@ library(httr)
 send_email <- function(email, file_path) {
   mailgun_api_key <- Sys.getenv("MAILGUN_API_KEY")
   domain <- Sys.getenv("MAILGUN_DOMAIN")
-  
+
   res <- POST(
     url = paste0("https://api.mailgun.net/v3/", domain, "/messages"),
     authenticate("api", mailgun_api_key),
