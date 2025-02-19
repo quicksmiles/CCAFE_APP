@@ -19,6 +19,9 @@ library(stats)
 library(tidyr)
 library(tools)
 library(vcfR)
+library(dotenv)
+
+load_dot_env()
 
 # Source modules
 source("modules/file_upload.R")
