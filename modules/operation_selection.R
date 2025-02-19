@@ -101,6 +101,7 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
       handle_se_process <- callr::r_bg(
         function(selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
                  OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {
+          # FIXME: move this to app.R, and if that doesn't work, then move it back
           source("../CCAFE/handle_casecontrolse.R") # Source the merge.R script
           handle_cc_se(selected_population, user_email, uploaded_data, N_case_se, N_control_se,
                        OR_colname_se, SE_colname_se, chromosome_colname, position_colname)# Execute function
