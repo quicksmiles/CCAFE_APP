@@ -1,8 +1,13 @@
 library(httr)
 
 send_email <- function(email, file_path) {
+<<<<<<< HEAD
   mailgun_api_key <- Sys.getenv("MAILGUN_API_KEY")
   domain <- Sys.getenv("MAILGUN_DOMAIN")
+=======
+  mailgun_api_key <- sys.getenv(API_KEY)
+  domain <- sys.getenv(DOMAIN_NAME)
+>>>>>>> a776eef (Update email.R)
   
   res <- POST(
     url = paste0("https://api.mailgun.net/v3/", domain, "/messages"),
