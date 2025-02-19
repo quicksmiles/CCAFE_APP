@@ -9,3 +9,7 @@ This `GitHub Page <https://ccafe-app.readthedocs.io/en/latest/>`_ serves to reco
 development for the `Case and Control Allele Frequency Estimation <https://wolffha.github.io/CCAFE_documentation/>`_
 public application. It includes a detailed proposal and revised documentaion that will be continuesly updated as the
 project develops.
+
+# Getting Started
+
+Copy `.env.TEMPLATE` as `.env` and fill in any empty values with your information.
