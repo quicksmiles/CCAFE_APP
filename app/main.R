@@ -21,7 +21,8 @@ load_dot_env()
 #' @export
 ui <- function(id) {
   ns <- NS(id)
-  
+  # creates a shiny dashboard template with all the main UI components for a webpage
+  # makes use of argonR and argonDash - two libraries for UI tools in shiny apps
   argonDashPage(
     title = "CCAFE",
     description = "Case and Control Allele Frequency Estimation Shiny App",
