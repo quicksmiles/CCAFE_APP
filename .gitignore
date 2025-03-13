@@ -2,9 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-
 .DS_Store
-
 app_cache
-
 .env
