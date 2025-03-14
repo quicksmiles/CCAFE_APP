@@ -12,6 +12,7 @@ box::use(
 box::use(
   ../app / view / operation_selection[operationSelectionUI, operationSelectionServer],
   ../app / view / file_upload[fileUploadUI, fileUploadServer],
+  ../app / view / home_page[...],
   ../app / view / user_guide[...],
   ../app / view / r_package[...]
 )
@@ -50,14 +51,14 @@ ui <- function(id) {
                                         tags$div(
                                           class = "navbar-brand pt-0 my-0",
                                           style = "display: flex; align-items: center; justify-content: flex-start;",
-                                          tags$img(
-                                            class = "navbar-brand-img",
-                                            src = "https://raw.githubusercontent.com/wolffha/wolffha/refs/heads/main/images/CCAFE-hex.png",
-                                            width = 40,
-                                            height = 40,
-                                            style = "margin-right: 10px;"
-                                          ),
-                                          tags$h1("CCAFE", style = "color: white; display: flex; align-items: center;"),
+                                          # tags$img(
+                                          #   class = "navbar-brand-img",
+                                          #   src = "https://raw.githubusercontent.com/wolffha/wolffha/refs/heads/main/images/CCAFE-hex.png",
+                                          #   width = 40,
+                                          #   height = 40,
+                                          #   style = "margin-right: 10px;"
+                                          # ),
+                                          tags$h1("CCAFE", style = "color: white;"),
                                         )
                                       ),
                                       
@@ -69,9 +70,9 @@ ui <- function(id) {
                                                      
                                                      argonSidebarMenu(
                                                        style = "display:-webkit-inline-box;",
-                                                       argonSidebarItem("Welcome", tabName = "welcome",
+                                                       argonSidebarItem("Home", tabName = "home",
                                                                         style = "background-color: transparent; border: none; color: secondary; border-radius: 20px; transition: 0.3s;",
-                                                                        tags$style("#welcome:hover, #welcome:focus { background-color: #f8f9fa; color: #0056b3; }")
+                                                                        tags$style("#home:hover, #home:focus { background-color: #f8f9fa; color: #0056b3; }")
                                                                         ),
                                                        argonSidebarItem("User Guide", tabName = "guide",
                                                                         style = "background-color: transparent; border: none; color: secondary; border-radius: 20px; transition: 0.3s;",
@@ -94,7 +95,8 @@ ui <- function(id) {
       # style = "margin-top: 80px;",
       argonTabItems(
         argonTabItem(
-          tabName = "welcome",
+          tabName = "home",
+          homeUI(ns("home"))
         ),
         argonTabItem(
           tabName = "guide",
