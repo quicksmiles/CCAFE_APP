@@ -25,16 +25,11 @@ guideUI <- function(id) {
     argonRow(
       argonColumn(
         width = 12,
-        argonH1(display = 3, "Inputs & Filters"),
+        argonH1(display = 3, "Quick Start Guide"),
         argonLead(
           tagList(
-            "The", argonBadge("Analysis", status = "primary"),
-            "module allows for filters to be applied based on variables in the",
-            argonBadge("CHR1_PHENO_295.1_EUR", status = "info"), "and",
-            argonBadge("CHR1_UKBB", status = "info"), "data sets. 
-            Below is an example of performing population specific estimations 
-            using beta to calculate odds ratio and gnomAD proxy values to calculate
-            adjusted case and control allele frequencies within the module:"
+            "How to use the ", argonBadge("Analysis", status = "primary"),
+            "module"
           )
         ),
         br(),
@@ -45,6 +40,8 @@ guideUI <- function(id) {
           size = "sm",
           width = 12,
           iconList = list(argonIcon("zoom-split-in"), argonIcon("settings-gear-65"), argonIcon("check-bold")),
+          
+          # step 1
           argonTab(
             tabName = "Step 1",
             active = TRUE,
@@ -55,15 +52,35 @@ guideUI <- function(id) {
               ),
               argonColumn(
                 width = 6,
-                argonTextColor(
-                  tagList(
-                    "Within the Inputs widget, click the box with the desired operationg to be performed",
-                    strong("Select Operation")),
+                tagList(   # Use tagList() to wrap everything
+                  argonTextColor(
+                    tags$p(
+                      "Once within the ", argonBadge("Analysis"), " module you will be able to upload your data."
+                    ),
                     color = "dark"
+                  ),
+                  argonTextColor(
+                    tags$p(
+                      "To do so, click the ", argonBadge("Upload"), 
+                      " button, which will open your file browser. Select your desired file, which will populate the 
+                      selected file name."
+                    ),
+                    color = "dark"
+                  ),
+                  argonTextColor(
+                    tags$p(
+                      "Once you have ensured you selected the desired file, click the ", argonBadge("Process File"), 
+                      " button, which will perform pre-processing of the file and show a preview table. This step removes 
+                      rows with missing data and standardizes column headers."
+                    ),
+                    color = "dark"
+                  )
                 )
               )
             )
           ),
+          
+          # step 2
           argonTab(
             tabName = "Step 2",
             argonRow(
@@ -92,7 +109,7 @@ guideUI <- function(id) {
               argonColumn(
                 width = 6,
                 argonTextColor(
-                  tag = tagList(
+                  tagList(
                     "In the", strong("Effect Estimate Calculattion"),
                     "widget, toggle the button and the selected variable with its available categories or levels will display.",
                     strong("BETA"), "in this example, is displayed if beta is included instead of", strong("OR"), 
@@ -103,29 +120,8 @@ guideUI <- function(id) {
                 br(),
                 br(),
                 argonTextColor(
-                  tag = tagList(
-                    "Girls hit your hallelujah (Woo)
-                    Girls hit your hallelujah (Woo)
-                    Girls hit your hallelujah (Woo)
-                    'Cause uptown funk gon' give it to you (Woo)
-                    ('Cause uptown funk gon' give it to you)
-                    'Cause uptown funk gon' give it to you
-                    Saturday night and we in the spot
-                    Don't believe me, just watch, come on
-                    Don't believe me, just watch, uh
-                    Don't believe me, just watch, uh
-                    Don't believe me, just watch
-                    Don't believe me, just watch
-                    Hey, hey, hey, oh
-                    
-                    [Verse 2]
-                    Stop, wait a minute
-                    Fill my cup, put some liquor in it
-                    Take a sip, sign the check
-                    Julio, get the stretch
-                    Ride to Harlem, Hollywood, Jackson, Mississippi
-                    If we show up, we gon' show out
-                    Smoother than a fresh jar of Skippy"),
+                  tagList(
+                    "TO ADD"),
                   color = "dark"
                 )
               )
@@ -160,9 +156,9 @@ guideServer <- function(id) {
     
     output$step1_image <- renderImage({
       list(
-        src = "app/static/CCAFE-hex.png",
+        src = "app/static/UploadDataset1.png",
         alt = "Filter Screenshot 1",
-        width = "90%",
+        width = "80%",
         height = "auto"
       )
     }, deleteFile = FALSE)
@@ -171,7 +167,7 @@ guideServer <- function(id) {
       list(
         src = "app/static/CCAFE-hex.png",
         alt = "Filter Screenshot 2",
-        width = "90%",
+        width = "20%",
         height = "auto"
       )
     }, deleteFile = FALSE)
@@ -180,7 +176,7 @@ guideServer <- function(id) {
       list(
         src = "app/static/CCAFE-hex.png",
         alt = "Filter Screenshot 3",
-        width = "90%",
+        width = "20%",
         height = "auto"
       )
     }, deleteFile = FALSE)
