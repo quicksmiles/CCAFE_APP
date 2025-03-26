@@ -13,18 +13,33 @@ operationSelectionUI <- function(id) {
   argonRow(
     argonColumn(
       width = 12,
-      # actionButton("toggle", "Toggle Inputs", class = "btn-primary"),
       br(),
       br(),
       hidden(
         div(id = ns("modules"),
             argonCard(
-              title = "Upload Dataset",
+              title = "Data Selection",
               width = 4,
-              fileInput(ns("file"), "Please upload GWAS summary statistics as a compressed text or compressed vcf file.", 
-                        accept = c(".bgz", ".gz"), buttonLabel = "Upload", width = "100%"),
-              actionButton(ns("process_file"), "Process File", class = "btn btn-default btn-round")
+              radioButtons(
+                ns("data_source"),
+                label = "Choose data source:",
+                choices = c("Upload File" = "upload", "Use Sample Data" = "sample"),
+                selected = "upload",
+                inline = TRUE
+              ),
+              conditionalPanel(
+                condition = paste0("input['", ns("data_source"), "'] == 'upload'"),
+                fileInput(
+                  ns("file"),
+                  "Upload GWAS summary statistics (compressed text or VCF file)",
+                  accept = c(".bgz", ".gz"),
+                  buttonLabel = "Upload",
+                  width = "100%"
+                )
+              ),
+              actionButton(ns("process_file"), "Process Data", class = "btn btn-default btn-round")
             ),
+            
             argonCard(
               title = "Inputs",
               width = 4,
@@ -75,6 +90,7 @@ operationSelectionUI <- function(id) {
     )
   )
 }
+
   
   # argonRow(
   #   argonColumn(
@@ -175,6 +191,22 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
     ns <- session$ns
     results <- reactiveVal()
     
+    # Reactive function to load sample data
+    getSampleData <- reactive({
+      sampleDat <- utils::read.table("app/static/sampledata.txt", header = T)
+      sampleDat
+    })
+    
+    # Choose between uploaded data or sample data
+    current_data <- reactive({
+      if (input$data_source == "sample") {
+        getSampleData()
+      } else {
+        req(uploaded_data())
+        uploaded_data()
+      }
+    })
+      
     selected_super_population <- reactive({
       input$super_population  # Automatically updates when user selects a value
     })
@@ -250,7 +282,7 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
           # Source the merge.R script
           source("../CCAFE/app/utils/handle_se.R")
           handle_se(selected_population, user_email, uploaded_data, N_case_se, N_control_se,
-                       OR_colname_se, SE_colname_se, chromosome_colname, position_colname) # Execute function
+                    OR_colname_se, SE_colname_se, chromosome_colname, position_colname) # Execute function
         }, 
         args = list(handle_se, selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
                     OR_colname_se, SE_colname_se, chromosome_colname, position_colname), 
@@ -294,22 +326,22 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
     
     # Display the first 10 rows of the results dataframe
     output$results_preview <- renderDT({
-              req(results())
-              req(column_names())
-             
-              results_formatted <- format(x = results(), digits = 4, scientific = TRUE)
-              print(results())
-              print(str(results_formatted))
-              print(str(results_formatted[ , !(colnames(results()) %in% column_names())]))
-              print(colnames(results_formatted[ , !(colnames(results()) %in% column_names())]))
-              print(c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])))
-              # Display the first 10 rows as a preview and highlight the newly generated columns
-              datatable(head(results_formatted, 10), options = list(dom = 't')) %>%
-                formatStyle(
-                  columns = c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])),
-                  color = "green"
-                  )
-          })
+      req(results())
+      req(column_names())
+      
+      results_formatted <- format(x = results(), digits = 4, scientific = TRUE)
+      print(results())
+      print(str(results_formatted))
+      print(str(results_formatted[ , !(colnames(results()) %in% column_names())]))
+      print(colnames(results_formatted[ , !(colnames(results()) %in% column_names())]))
+      print(c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])))
+      # Display the first 10 rows as a preview and highlight the newly generated columns
+      datatable(head(results_formatted, 10), options = list(dom = 't')) %>%
+        formatStyle(
+          columns = c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])),
+          color = "green"
+        )
+    })
     
     output$download_results <- downloadHandler(
       filename = function() {

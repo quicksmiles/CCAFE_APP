@@ -8,34 +8,21 @@ box::use(
 homeUI <- function(id) {
   ns <- NS(id)
   tagList(
+    # Row for Image and About Section (two columns)
     argonRow(
-      style = "display: flex; justify-content: center; align-items: center; width: 100%;",
+      style = "display: flex; justify-content: space-between; align-items: center; width: 100%;",
       argonColumn(
-        width = 12,
-        center = TRUE,
-        argonCard(
-          width = 12,
-          background_color = "transparent",
-          tags$div(
-            style = "display: flex; flex-direction: column; align-items: center; margin-bottom: 2em;",
-            tags$img(
-              src = "https://raw.githubusercontent.com/wolffha/wolffha/refs/heads/main/images/CCAFE-hex.png",
-              width = "15%",
-            ),
-            argonH1(
-              "Case and Control Allele Frequency Estimation Application",
-              display = 1,
-              style = "padding: 1em; font-size: 1.8em; letter-spacing: 2px; text-align: center"
-            )
+        width = 6,  # Image takes 6 columns
+        tags$div(
+          style = "display: flex; flex-direction: column; align-items: center;",
+          tags$img(
+            src = "static/CCAFE-hex.png",
+            width = "60%"  # Adjust width if needed
+          )
         )
-      )
-    ),
-
-    # About Section
-    argonRow(
-      style = "margin-top: 2em;",
+      ),
       argonColumn(
-        width = 12,
+        width = 6,  # About section takes 6 columns
         argonCard(
           width = 12,
           background_color = "transparent",
@@ -48,7 +35,7 @@ homeUI <- function(id) {
           argonLead(
             "CCAFE's latest allows for estimation using either total (cases and controls aggregated) AF or SE.
             When using SE, the application runs a query of gnomAD V4 to use as proxies to implement bias 
-            correction. "
+            correction."
           ),
           argonLead(
             "The platform is freely accessible and intended for researchers and bioinformaticians working 
@@ -59,7 +46,7 @@ homeUI <- function(id) {
             tags$a(href = "https://www.biorxiv.org/content/10.1101/2024.10.24.619530v1.full-text",
                    target = "_blank", # opens link in a new tab 
                    "CCAFE: Estimating Case and Control Allele Frequencies from GWAS Summary Statistics",
-                   style = "color: #007bff; text decoration: underline;")
+                   style = "color: #007bff; text-decoration: underline;")
           )
         )
       )
@@ -97,7 +84,7 @@ homeUI <- function(id) {
       )
     )
    )
-  )
+  
 }
 
 homeServer <- function(id) {
