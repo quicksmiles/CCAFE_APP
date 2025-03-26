@@ -65,6 +65,24 @@ operationSelectionUI <- function(id) {
                 textInput(ns("user_email"), "Email", placeholder = "Enter your email"),
                 actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary")
               )
+            ),
+            argonCard(
+              title = tags$div(
+                tags$span("Effect Estimate Calculation"),
+                style = "display: flex; justify-content: space-between; align-items: center;",
+                tags$label(
+                  class = "custom-toggle",
+                  tags$input(
+                    type = "checkbox",
+                    id = ns("toggle_button")
+                  ),
+                  tags$span(
+                    style = "display: flex; justify-content: space-between; align-items: center;",
+                    class = "custom-toggle-slider rounded-circle"
+                  )
+                )
+              ),
+              width = 4,
             )
         ),
         DTOutput("data_table")
@@ -190,12 +208,12 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
     })
       
     selected_super_population <- reactive({
-      input$super_population
+      input$super_population  # Automatically updates when user selects a value
     })
     
     observeEvent(column_names(), {
       req(column_names())
-      req(current_data())
+      req(uploaded_data())
       
       updateSelectInput(session, "BETA_colname", choices = column_names(), selected = "BETA")
       updateNumericInput(session, "N_case", value = input$N_case)
@@ -209,38 +227,41 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
       updateSelectInput(session, "chromosome_colname", choices = column_names(), selected = "chrom")
       updateSelectInput(session, "position_colname", choices = column_names(), selected = "pos")
     })
-    
+    # observe if the calculate OR check box is selected
+    # updated_data <- reactiveVal()
     observe({
       req(input$BETA_colname)
-      df <- current_data()
-      if (input$calculate_OR == TRUE) {
+      df <- uploaded_data()
+      if(input$calculate_OR == TRUE){
         df$OR <- exp(df[[input$BETA_colname]])
         uploaded_data(df)
       }
       updateSelectInput(session, "OR_colname", choices = colnames(df), selected = "OR")
     })
     
+    
     observeEvent(input$run_casecontrolaf, {
-      req(current_data())
+      req(uploaded_data())
       
-      results_af <- CaseControl_AF(
-        data = current_data(),
-        N_case = input$N_case,
-        N_control = input$N_control,
-        OR_colname = input$OR_colname,
-        AF_total_colname = input$AF_total_colname
-      )
-      
+      results_af <- CaseControl_AF(data = uploaded_data(),
+                                   N_case = input$N_case,
+                                   N_control = input$N_control,
+                                   OR_colname = input$OR_colname,
+                                   AF_total_colname = input$AF_total_colname)
+      # Move to email input page
+      # updateNavbarPage(session, "CCAFE App", selected = "Step3")
       results(results_af)
     })
     
     observeEvent(input$run_casecontrolse, {
-      req(current_data())
+      # Move to email input page
+      # updateNavbarPage(session, "CCAFE", selected = "Step3")
+      req(uploaded_data())  # Ensure the user has uploaded data
       req(selected_super_population())
       req(input$user_email)
       
-      data <- current_data()
-      pop <- selected_super_population()
+      uploaded_data <- uploaded_data()
+      selected_population <- selected_super_population()
       
       user_email <- input$user_email
       N_case_se <- input$N_case_se
@@ -250,19 +271,76 @@ operationSelectionServer <- function(id, uploaded_data, column_names, main_sessi
       chromosome_colname <- input$chromosome_colname
       position_colname <- input$position_colname
       
-      # Simulate processing function
-      results_se <- data  # Placeholder for actual CaseControl_SE output
-      results(results_se)
+      # Show a modal spinner while the process runs
+      #show_modal_spinner(spin = "self-building-square", text = "Processing query in the background...")
+      serialized_handle_se <- serialize(object = handle_se, NULL)
+      # Run merge.R in the background
+      handle_se_process <- callr::r_bg(
+        function(handle_se, selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
+                 OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {
+          # FIXME: move this to app.R, and if that doesn't work, then move it back
+          # Source the merge.R script
+          source("../CCAFE/app/utils/handle_se.R")
+          handle_se(selected_population, user_email, uploaded_data, N_case_se, N_control_se,
+                    OR_colname_se, SE_colname_se, chromosome_colname, position_colname) # Execute function
+        }, 
+        args = list(handle_se, selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
+                    OR_colname_se, SE_colname_se, chromosome_colname, position_colname), 
+        supervise = TRUE
+      )
+      print(processx::poll(list(handle_se_process), 1000))
+      # Poll for completion of merge process
+      observe({
+        if (handle_se_process$poll_io(0)["process"] != "ready") {
+          # If process is still running, don't do anything yet
+          print("still querying...")
+          print(processx::poll(list(handle_se_process), 60000))
+          print(handle_se_process$get_exit_status())
+          print(handle_se_process$read_error())
+          print(handle_se_process$read_output())
+          showNotification("Still querying...", type = "message")
+          invalidateLater(60000, session) # Poll every minute
+          # Navigate to the email input page
+        } else {
+          print("completed query succesful...")
+          print(handle_se_process$get_exit_status())
+          # Process completed
+          if (handle_se_process$get_exit_status() == 0) {
+            print("Completed querying data and running CaseControl_SE()")
+            results_se <- handle_se_process$get_result()
+            print(str(results_se))
+            results(results_se)
+            print(str(results()))
+            # Notify the user and allow navigation to the next step
+            print("ControlCase_SE method was executed successfully!")
+            # showNotification("Process completed successfully!", type = "message")
+            
+          } else {
+            # Handle errors
+            print("Error occurred after querying and merging was finished, did not go into CC_SE")
+            # showNotification("Error occurred during processing.", type = "error")
+          }
+        }
+      })  
     })
     
     # Display the first 10 rows of the results dataframe
     output$results_preview <- renderDT({
       req(results())
+      req(column_names())
       
-      datatable(
-        head(results(), 10),
-        options = list(dom = 't')
-      )
+      results_formatted <- format(x = results(), digits = 4, scientific = TRUE)
+      print(results())
+      print(str(results_formatted))
+      print(str(results_formatted[ , !(colnames(results()) %in% column_names())]))
+      print(colnames(results_formatted[ , !(colnames(results()) %in% column_names())]))
+      print(c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])))
+      # Display the first 10 rows as a preview and highlight the newly generated columns
+      datatable(head(results_formatted, 10), options = list(dom = 't')) %>%
+        formatStyle(
+          columns = c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])),
+          color = "green"
+        )
     })
     
     output$download_results <- downloadHandler(
