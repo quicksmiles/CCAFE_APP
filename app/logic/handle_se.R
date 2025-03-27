@@ -10,6 +10,7 @@ source("app/utils/email.R", local = TRUE)
 # devtools::install_github("https://github.com/wolffha/CCAFE")
 library(CCAFE)
 
+# TODO: method header
 handle_se <- function(selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
                          OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {
   # Call merge.R final_results function to obtain gnomAD population data
@@ -22,6 +23,9 @@ handle_se <- function(selected_population, user_email, uploaded_data, N_case_se,
                           proxy_MAF = super_population_results[[selected_MAF_col]]
   )
 
+  # fine for now to remove sex chromosome - should be added to the user guide that
+  # currently, the default is to remove them if they're present
+  
   # Perform CaseControl_SE operation
   results_se <- CaseControl_SE(data = uploaded_data,
                                N_case = N_case_se,
