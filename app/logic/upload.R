@@ -7,7 +7,8 @@
 #       https://wolffha.github.io/CCAFE_documentation/
 #
 
-
+# TODO: add in method header that explains what the function is for - even though
+# it's obvious
 extract_info_fields <- function(vcf, elements) {
   # Initialize a list to store extracted columns
   info_data <- list()
@@ -34,6 +35,12 @@ vcf_upload <- function(vcf_file) {
   
   tryCatch({
     file_path <- vcf_file$datapath
+    
+    # is read.vcfR in the vcfR package? If so, best practice is to explicitly 
+    # call the function from the package (vcfR::read.vcfR()) - at least this
+    # is considered best practice when making public code
+    
+    # same comment goes for all vcfR (presumably) functions below
     
     # Using vcfR for flexible reading
     progress$inc(0.2, detail = "Reading VCF file")
@@ -93,7 +100,7 @@ text_upload <- function(text_file) {
   })
 }
 
-
+# TODO: method header
 upload_file <- function(file, file_name, file_path) {
   ext <- tools::file_ext(file_name)
   switch(ext,
@@ -105,7 +112,7 @@ upload_file <- function(file, file_name, file_path) {
   )
 }
 
-
+# ToDO: method header
 save_file <- function(file_data, output_dir = "/tmp/CCAFE/") {
   # ensure the output folder exists
   if (!dir.exists(output_dir)) {
@@ -118,3 +125,6 @@ save_file <- function(file_data, output_dir = "/tmp/CCAFE/") {
   fwrite(file_data, new_path, sep = "\t", compress = "gzip")
   return(new_path)
 }
+
+# technically best practice would be to have complete method headers that explain
+# what the function does, what the inputs are, and what the return is

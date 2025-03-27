@@ -1,3 +1,6 @@
+# when you're ready to, you'll need to delete all of the old dead code that's 
+# commented out currently
+
 # ghql is a library for making graphql queries
 # intro to ghql:
 # https://docs.ropensci.org/ghql/articles/ghql.html
@@ -14,7 +17,7 @@ gnomad_api_url <- Sys.getenv("GNOMAD_API_URL", unset="https://gnomad.broadinstit
 
 # Function to read input file and generate query ranges
 generate_ranges <- function(data, range_size = 100000) {
-  range_size = 100000
+  range_size = range_size
   # data <- read.delim(file_path, header = TRUE, sep = "\t")
   #data <- as.data.table(data)
   # Extract unique chromosome and position ranges
@@ -59,6 +62,7 @@ generate_ranges <- function(data, range_size = 100000) {
   return(ranges)
 }
 
+# TODO: method header
 do_query <- function(uploaded_data) {
   # build a connection object to consume gnomad's graphql API
   con <- GraphqlClient$new(

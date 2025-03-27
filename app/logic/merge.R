@@ -1,16 +1,21 @@
-#
+# again, you'll have to remove dead code once you're comfortable
+
 # This file is a starting point toward functions that will serve to merge
 # a users compressed file data with gnomADs GRCh38 version 4.1.0 population specific data. 
 # This will achieve our overall goal of applying CCAFE methods to a users data.
 #
 # Further research, development, and code readability is required.
 #
+
+# I don't know what the rules for shiny are as far as loading/downloading 
+# required packages is - you'll probably have to look that up
 library(data.table)
 library(dplyr)
 library(purrr)
 # Link query.R file and its functions to be executed once merge.R is run 
 source("app/utils/query.R", local = TRUE)
 
+# TODO method header
 do_merge <- function(uploaded_data, user_selected_population) {
   # call query method
   query_results <- do_query(uploaded_data)
@@ -96,6 +101,7 @@ do_merge <- function(uploaded_data, user_selected_population) {
    (final_merge$ref.x == final_merge$ref.y & final_merge$alt.x == final_merge$alt.y),
   ]
   
+  # comment what the below lines (105-109) are doing
   #
   start_col <- which(names(final_merge) == "alt")
   end_col <- which(names(final_merge) == "afr_ac")
