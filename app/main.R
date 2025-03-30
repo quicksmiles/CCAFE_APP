@@ -10,6 +10,11 @@ box::use(
 )
 
 box::use(
+  ../app / logic / upload[...],
+  ../app / logic / email[...],
+  ../app / logic / handle_se[...],
+  ../app / logic / merge[...],
+  ../app / logic / query[...],
   ../app / view / operation_selection[operationSelectionUI, operationSelectionServer],
   ../app / view / file_upload[fileUploadUI, fileUploadServer],
   ../app / view / home_page[...],
@@ -27,11 +32,19 @@ ui <- function(id) {
   argonDashPage(
     title = "CCAFE",
     description = "Case and Control Allele Frequency Estimation Shiny App",
-    header = argonDashHeader(color = "primary",
+    header = argonDashHeader(tags$style(HTML(".header { 
+                                              position: fixed;
+                                              top: 0;
+                                              left: 0;
+                                              right: 0;
+                                              z-index: auto;
+                                              width: 100%;}")),
+                             color = "primary",
                              separator = FALSE,
                              bottom_padding = 4,
                              top_padding = 4,
-                              ),
+                            
+                            ),
     sidebar = NULL,
     navbar = argonDashNavbar(headroom = FALSE,
                              style = "display: flex; 
@@ -51,13 +64,6 @@ ui <- function(id) {
                                         tags$div(
                                           class = "navbar-brand pt-0 my-0",
                                           style = "display: flex; align-items: center; justify-content: flex-start;",
-                                          # tags$img(
-                                          #   class = "navbar-brand-img",
-                                          #   src = "https://raw.githubusercontent.com/wolffha/wolffha/refs/heads/main/images/CCAFE-hex.png",
-                                          #   width = 40,
-                                          #   height = 40,
-                                          #   style = "margin-right: 10px;"
-                                          # ),
                                           tags$h1("CCAFE", style = "color: white;"),
                                         )
                                       ),
@@ -92,7 +98,7 @@ ui <- function(id) {
                           )
             ),
     body = argonDashBody(
-      # style = "margin-top: 80px;",
+      style = "margin-top: 80px;",
       argonTabItems(
         argonTabItem(
           tabName = "home",
@@ -121,15 +127,7 @@ server <- function(id) {
     # welcomeServer("welcome")
     guideServer("guide")
     
-    uploaded_data <- fileUploadServer("file_upload", session)
-    
-    # Reactive for column names
-    column_names <- reactive({
-      req(uploaded_data())
-      colnames(uploaded_data())
-    })
-    
     # Operation selection module
-    results <- operationSelectionServer("operation_selection", uploaded_data, column_names, session)
+    results <- operationSelectionServer("operation_selection", session)
   })
 }

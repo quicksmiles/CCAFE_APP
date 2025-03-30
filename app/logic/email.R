@@ -1,4 +1,6 @@
-library(httr)
+box::use(
+  httr[POST]
+)
 
 save_results <- function(results, user_email) {
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")

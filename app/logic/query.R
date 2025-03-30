@@ -1,9 +1,11 @@
 # ghql is a library for making graphql queries
 # intro to ghql:
 # https://docs.ropensci.org/ghql/articles/ghql.html
-library(ghql)
-library(tidyverse)
-library(ratelimitr)
+box::use(
+  ghql[...],
+  tidyverse[...],
+  ratelimitr[...],
+)
 # ratelimitr is a library for rate limiting function calls, e.g. to 10 per
 # second
 # intro to ratelimitr:

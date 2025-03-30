@@ -5,11 +5,15 @@
 #
 # Further research, development, and code readability is required.
 #
-library(data.table)
-library(dplyr)
-library(purrr)
+box::use(
+  data.table[...],
+  dplyr[...],
+  purrr[...]
+)
 # Link query.R file and its functions to be executed once merge.R is run 
-source("app/utils/query.R", local = TRUE)
+box::use(
+  app/logic/query,
+)
 
 do_merge <- function(uploaded_data, user_selected_population) {
   # call query method

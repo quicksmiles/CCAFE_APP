@@ -1,5 +1,11 @@
-source("app/utils/merge.R", local = TRUE)
-source("app/utils/email.R", local = TRUE)
+box::use(
+  CCAFE[...],
+)
+
+box::use(
+  app/logic/merge,
+  app/logic/email,
+  )
 
 # To install this package from GitHub:
 #   
@@ -8,7 +14,6 @@ source("app/utils/email.R", local = TRUE)
 #   }
 # 
 # devtools::install_github("https://github.com/wolffha/CCAFE")
-library(CCAFE)
 
 handle_se <- function(selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
                          OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {

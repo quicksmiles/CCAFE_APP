@@ -6,8 +6,12 @@
 #
 #       https://wolffha.github.io/CCAFE_documentation/
 #
-
-
+box::use(
+  shiny[...],
+  data.table[...],
+  stats[...],
+  vcfR[...],
+)
 extract_info_fields <- function(vcf, elements) {
   # Initialize a list to store extracted columns
   info_data <- list()
