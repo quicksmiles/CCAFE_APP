@@ -144,7 +144,7 @@ guideServer <- function(id) {
         ),
         input = c(
           "position, chromosome, total allele frequency",
-          "position, chromosome, odds ration, population group"
+          "position, chromosome, odds ratio, population group"
         ),
         output = c(
           "Table 00-0.00 GWAS Summary Statistics: Unadjusted Case and Control Allele Frequencies",
