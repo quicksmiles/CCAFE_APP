@@ -2,10 +2,12 @@ box::use(
   argonR[...],
   argonDash[...],
   CCAFE[...],
+  data.table[fwrite],
+  dplyr[...],
   reactR[...],
   shiny[...],
   shinyjs[...],
-  DT[DTOutput, renderDT],
+  DT[...],
 )
 
 box::use(
@@ -128,8 +130,9 @@ operationSelectionUI <- function(id) {
         argonCard(
           width = 12,
           # style = "min-height: 100%; height: calc(100vh - 100px);",  # Full height of the three cards
-          tags$div(class = "table-responsive py-4", DTOutput("sample_preview")),
+          DTOutput(ns("sample_preview")),
           DTOutput(ns("upload_preview")),
+          DTOutput(ns("data_preview")),
           DTOutput(ns("results_preview")),
           downloadButton(ns("download_results"), "Download Results")
         )
@@ -137,40 +140,6 @@ operationSelectionUI <- function(id) {
     )
   )
 }
-
-
-  # 
-  # tagList(
-  #   h3("Choose Operation"),
-  #   radioButtons(ns("operation"), "Select Operation",
-  #                choices = c("CaseControl_AF" = "AF", "CaseControl_SE" = "SE")),
-  #   selectInput(ns("BETA_colname"), "Beta Column", choices = NULL),
-  #   checkboxInput(inputId = ns("calculate_OR"), label = "Calculate OR column?", value = FALSE),
-    # conditionalPanel(
-    #   condition = paste0("input['", ns("operation"), "'] == 'AF'"),
-    #   numericInput(ns("N_case"), "Number of cases:", value = NULL),
-    #   numericInput(ns("N_control"), "Number of controls:", value = NULL),
-    #   selectInput(ns("OR_colname"), "Odds Ratio Column", choices = NULL),
-    #   selectInput(ns("AF_total_colname"), "Total AF Column:", choices = NULL),
-    #   actionButton(ns("run_casecontrolaf"), "Run CaseControl_AF", class = "btn-primary"),
-    #   downloadButton(ns("download_results"))
-    # ),
-    # conditionalPanel(
-    #   condition = paste0("input['", ns("operation"), "'] == 'SE'"),
-    #   selectInput(ns("super_population"), "Select Super-Population for Bias Correction",
-    #               choices = c("total", "afr", "ami", "amr", "asj", "eas", "fin", "mid", "nfe", "remaining", "sas")),
-    #   numericInput(ns("N_case_se"), "Number of cases:", value = NULL),
-    #   numericInput(ns("N_control_se"), "Number of controls:", value = NULL),
-    #   selectInput(ns("OR_colname_se"), "Odds Ratio Column", choices = NULL),
-    #   selectInput(ns("SE_colname_se"), "SE Column:", choices = NULL),
-    #   selectInput(ns("chromosome_colname"), "Chromosome Column:", choices = NULL),
-    #   selectInput(ns("position_colname"), "Position Column:", choices = NULL),
-    #   textInput(ns("user_email"), "Email", placeholder = "Enter your email"),
-    #   actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary")
-    # ),
-  #   
-  #   DTOutput(ns("results_preview"))
-  # )
 
 operationSelectionServer <- function(id, main_session) {
   moduleServer(id, function(input, output, session) {
@@ -183,33 +152,6 @@ operationSelectionServer <- function(id, main_session) {
       sampleDat
     })
     
-    # Render preview of uploaded data
-    output$sample_preview <- renderDT({
-      req(getSampleData())
-      
-      # Properly render DataTable with class and ID inside the datatable function
-      datatable(
-        getSampleData(),
-        
-        # DataTable options
-        options = list(
-          dom = 'Bfrtip',                       # Include buttons
-          buttons = c('download'),  # Export options
-          paging = TRUE,
-          searching = TRUE,
-          ordering = TRUE,
-          scrollX = TRUE,
-          autoWidth = TRUE
-        ),
-        
-        # Add extensions and styling
-        extensions = c('Buttons', 'Select'),
-        class = "table table-flush",
-        id = "datatable-basic", # Use Argon table styling
-        rownames = FALSE                        # Hide row names
-      )
-    })
-    
     uploaded_data <- fileUploadServer("file_upload", main_session)
     
     # Choose between uploaded data or sample data
@@ -220,6 +162,30 @@ operationSelectionServer <- function(id, main_session) {
         req(uploaded_data())
         uploaded_data()
       }
+    })
+   
+     # Render preview of uploaded data or sample data
+    output$data_preview <- renderDT({
+      req(current_data())
+      
+      # Properly render DataTable with class and ID inside the datatable function
+      datatable(
+        current_data(),
+        
+        # DataTable options
+        options = list(
+          dom = 'Bfrtip',                       # Include buttons
+          paging = TRUE,
+          searching = TRUE,
+          ordering = TRUE,
+          scrollX = TRUE,
+          autoWidth = TRUE
+        ),
+        
+        # Add extensions and styling
+        # extensions = c('Buttons', 'Select'),
+        rownames = FALSE                        # Hide row names
+      )
     })
     
     column_names <- reactive({
@@ -365,16 +331,26 @@ operationSelectionServer <- function(id, main_session) {
       req(results())
       req(column_names())
       
-      results_formatted <- format(x = results(), digits = 4, scientific = TRUE)
-      print(results())
-      print(str(results_formatted))
-      print(str(results_formatted[ , !(colnames(results()) %in% column_names())]))
-      print(colnames(results_formatted[ , !(colnames(results()) %in% column_names())]))
-      print(c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])))
-      # Display the first 10 rows as a preview and highlight the newly generated columns
-      datatable(head(results_formatted, 10), options = list(dom = 't')) %>%
+      # Convert results to a formatted table (4 decimal places, scientific notation)
+      results_formatted <- format(results(), digits = 4, scientific = TRUE)
+      
+      # Identify newly generated columns (those NOT in column_names)
+      new_columns <- setdiff(colnames(results_formatted), column_names())
+      
+      # Ensure the DataTable is displayed correctly
+      datatable(
+        results_formatted, 
+        options = list(
+          dom = 't',
+          paging = TRUE,
+          searching = TRUE,
+          ordering = TRUE,
+          scrollX = TRUE,
+          autoWidth = TRUE
+        )
+      ) %>%
         formatStyle(
-          columns = c(colnames(results_formatted[ , !(colnames(results()) %in% column_names())])),
+          columns = new_columns,  # Dynamically highlight new columns
           color = "green"
         )
     })
