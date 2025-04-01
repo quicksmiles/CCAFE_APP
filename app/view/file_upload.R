@@ -10,9 +10,8 @@ box::use(
 fileUploadUI <- function(id) {
   ns <- NS(id)
   tagList(
-    fileInput(ns("file"), "Upload your GWAS data (gzipped text or gzipped vcf files only)", accept = c(".bgz", ".gz")),
+    fileInput(ns("file"), "Upload GWAS summary statistics (compressed text or VCF file)", accept = c(".bgz", ".gz")),
     actionButton(ns("process_file"), "Process Data", class = "btn btn-default btn-round"),
-    DTOutput(ns("file_preview")),
   )
 }
 
@@ -39,12 +38,6 @@ fileUploadServer <- function(id, main_session) {
       if (!is.null(data)) {
         # Pass the uploaded file data to reactive value
         uploaded_data(data)
-        
-        # Render preview of uploaded data
-        output$file_preview <- renderDT({
-          req(uploaded_data())
-          uploaded_data()
-        })
         
         # Try to save user file data to disk space
         saved_file <- tryCatch(
