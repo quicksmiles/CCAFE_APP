@@ -11,7 +11,7 @@ fileUploadUI <- function(id) {
   ns <- NS(id)
   tagList(
     fileInput(ns("file"), "Upload GWAS summary statistics (compressed text or VCF file)", accept = c(".bgz", ".gz")),
-    actionButton(ns("process_file"), "Process Data", class = "btn btn-default btn-round"),
+    actionButton(ns("process_file"), "Preview Data", class = "btn btn-default btn-round"),
   )
 }
 
