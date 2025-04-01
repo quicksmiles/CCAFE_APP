@@ -89,4 +89,5 @@ homeUI <- function(id) {
 
 homeServer <- function(id) {
   moduleServer(id, function(input, output, session) {})
+  # This module only renders static css, no server logic needed
 }
