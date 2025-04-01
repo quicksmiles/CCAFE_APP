@@ -46,7 +46,7 @@ operationSelectionUI <- function(id) {
           
           conditionalPanel(
             condition = sprintf("input['%s'] == 'sample'", ns("data_source")),
-            actionButton(ns("process_file"), "Process Data", class = "btn btn-default btn-round")
+            actionButton(ns("process_file"), "Preview Data", class = "btn btn-default btn-round")
           )
         ),
         
@@ -171,28 +171,31 @@ operationSelectionServer <- function(id, main_session) {
     })
    
      # Render preview of uploaded data or sample data
-    output$data_preview <- renderDT({
-      req(current_data())
-      
-      # Properly render DataTable with class and ID inside the datatable function
-      datatable(
-        current_data(),
+    observeEvent(input$process_file, {
+      output$data_preview <- renderDT({
+        req(current_data())
         
-        # DataTable options
-        options = list(
-          dom = 'Bfrtip',                       # Include buttons
-          paging = TRUE,
-          searching = TRUE,
-          ordering = TRUE,
-          scrollX = TRUE,
-          autoWidth = TRUE
-        ),
-        
-        # Add extensions and styling
-        # extensions = c('Buttons', 'Select'),
-        rownames = FALSE                        # Hide row names
-      )
+        # Properly render DataTable with class and ID inside the datatable function
+        datatable(
+          current_data(),
+          
+          # DataTable options
+          options = list(
+            dom = 'Bfrtip',                       # Include buttons
+            paging = TRUE,
+            searching = TRUE,
+            ordering = TRUE,
+            scrollX = TRUE,
+            autoWidth = TRUE
+          ),
+          
+          # Add extensions and styling
+          # extensions = c('Buttons', 'Select'),
+          rownames = FALSE                        # Hide row names
+        )
+      })
     })
+   
     
     column_names <- reactive({
       req(current_data())
