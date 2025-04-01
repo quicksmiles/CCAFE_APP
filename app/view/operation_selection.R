@@ -98,9 +98,10 @@ operationSelectionUI <- function(id) {
             conditionalPanel(
               condition = sprintf("input['%s'] == 'SE'", ns("operation")),
               selectInput(ns("population"), "Select Population for Bias Correction",
-                          choices = c("total", "afr", "ami", "amr", "asj", "eas", "fin", "mid", "nfe", "remaining", "sas")),
-              numericInput(ns("N_case_se"), "Number of cases:", value = NULL),
-              numericInput(ns("N_control_se"), "Number of controls:", value = NULL),
+                          choices = c("total", "afr", "ami", "amr", "asj", "eas", "fin", "mid", "nfe", "remaining", "sas"),
+                          selected = "nfe"),
+              numericInput(ns("N_case_se"), "Number of cases:", value = 16550),
+              numericInput(ns("N_control_se"), "Number of controls:", value = 403923),
               
               radioButtons(
                 ns("effect_estimate_type_SE"),
@@ -120,10 +121,10 @@ operationSelectionUI <- function(id) {
               ),
               
               selectInput(ns("SE_colname_se"), "SE Column:", choices = NULL),
-              selectInput(ns("chromosome_colname"), "Chromosome Column:", choices = NULL),
-              selectInput(ns("position_colname"), "Position Column:", choices = NULL),
+              selectInput(ns("chromosome_colname"), "Chromosome Column:", choices = NULL, selected = "CHR"),
+              selectInput(ns("position_colname"), "Position Column:", choices = NULL, selected = "POS"),
               textInput(ns("user_email"), "Email", placeholder = "Enter your email"),
-              actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary")
+              actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary"),
             )
             
           )
