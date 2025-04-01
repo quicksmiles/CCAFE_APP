@@ -69,7 +69,24 @@ operationSelectionUI <- function(id) {
               condition = sprintf("input['%s'] == 'AF'", ns("operation")),
               numericInput(ns("N_case"), "Number of cases:", value = 16550),
               numericInput(ns("N_control"), "Number of controls:", value = 403923),
-              selectInput(ns("OR_colname"), "Odds Ratio Column", choices = NULL),
+              
+              radioButtons(
+                ns("effect_estimate_type_AF"),
+                "Effect Estimate Type:",
+                choices = c("Beta" = "beta", "Odds Ratio" = "or"),
+                inline = TRUE
+              ),
+              
+              conditionalPanel(
+                condition = sprintf("input['%s'] == 'beta'", ns("effect_estimate_type_AF")),
+                selectInput(ns("BETA_colname_AF"), "Beta Column", choices = NULL)
+              ),
+              
+              conditionalPanel(
+                condition = sprintf("input['%s'] == 'or'", ns("effect_estimate_type_AF")),
+                selectInput(ns("OR_colname_AF"), "Odds Ratio Column", choices = NULL)
+              ),
+              
               selectInput(ns("AF_total_colname"), "Total AF Column:", choices = NULL),
               actionButton(ns("run_casecontrolaf"), "Run CaseControl_AF", class = "btn-primary")
             ),
@@ -81,45 +98,31 @@ operationSelectionUI <- function(id) {
                           choices = c("total", "afr", "ami", "amr", "asj", "eas", "fin", "mid", "nfe", "remaining", "sas")),
               numericInput(ns("N_case_se"), "Number of cases:", value = NULL),
               numericInput(ns("N_control_se"), "Number of controls:", value = NULL),
-              selectInput(ns("OR_colname_se"), "Odds Ratio Column", choices = NULL),
+              
+              radioButtons(
+                ns("effect_estimate_type_SE"),
+                "Effect Estimate Type:",
+                choices = c("Beta" = "beta", "Odds Ratio" = "or"),
+                inline = TRUE
+              ),
+              
+              conditionalPanel(
+                condition = sprintf("input['%s'] == 'beta'", ns("effect_estimate_type_SE")),
+                selectInput(ns("BETA_colname_SE"), "Beta Column", choices = NULL)
+              ),
+              
+              conditionalPanel(
+                condition = sprintf("input['%s'] == 'or'", ns("effect_estimate_type_SE")),
+                selectInput(ns("OR_colname_SE"), "Odds Ratio Column", choices = NULL)
+              ),
+              
               selectInput(ns("SE_colname_se"), "SE Column:", choices = NULL),
               selectInput(ns("chromosome_colname"), "Chromosome Column:", choices = NULL),
               selectInput(ns("position_colname"), "Position Column:", choices = NULL),
               textInput(ns("user_email"), "Email", placeholder = "Enter your email"),
               actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary")
             )
-          )
-        ),
-        
-        # Effect Estimate Calculation Card
-        argonCard(
-          title = tags$div(
-            style = "display: flex; justify-content: space-between; align-items: center; width: 100%;",
             
-            # Title text on the left
-            tags$span("Effect Estimate Calculation"),
-            
-            # Toggle button on the right
-            tags$label(
-              class = "custom-toggle",
-              style = "margin-left: 100px;",  # Pushes the toggle to the right
-              tags$input(
-                type = "checkbox",
-                id = ns("toggle_button")
-              ),
-              tags$span(
-                style = "display: inline-block; margin-left: auto;", 
-                class = "custom-toggle-slider rounded-circle"
-              )
-            )
-          ),
-          
-          width = 12,
-          
-          # Input Fields shown only when toggle is ON
-          conditionalPanel(
-            condition = sprintf("input['%s'] == true", ns("toggle_button")),
-            selectInput(ns("BETA_colname"), "Beta Column", choices = NULL)
           )
         )
       ),
@@ -201,55 +204,87 @@ operationSelectionServer <- function(id, main_session) {
       req(column_names())
       req(current_data())
       
-      updateSelectInput(session, "BETA_colname", choices = column_names(), selected = "BETA")
-      updateNumericInput(session, "N_case", value = input$N_case)
-      updateNumericInput(session, "N_control", value = input$N_control)
-      updateNumericInput(session, "N_case_se", value = input$N_case_se)
-      updateNumericInput(session, "N_control_se", value = input$N_control_se)
-      updateSelectInput(session, "OR_colname", choices = column_names(), selected = "OR")
-      updateSelectInput(session, "OR_colname_se", choices = column_names(), selected = "OR")
+      updateSelectInput(session, "BETA_colname_AF", choices = column_names(), selected = "BETA")
+      updateSelectInput(session, "BETA_colname_SE", choices = column_names(), selected = "BETA")
+      updateSelectInput(session, "OR_colname_AF", choices = column_names(), selected = "OR")
+      updateSelectInput(session, "OR_colname_SE", choices = column_names(), selected = "OR")
       updateSelectInput(session, "AF_total_colname", choices = column_names(), selected = "true_maf_pop")
       updateSelectInput(session, "SE_colname_se", choices = column_names(), selected = "SE")
       updateSelectInput(session, "chromosome_colname", choices = column_names(), selected = "chrom")
       updateSelectInput(session, "position_colname", choices = column_names(), selected = "pos")
-      # updateSelectInput(session, "population", selected = "nfe")
     })
-    # observe if the calculate OR button is toggled
-    # updated_data <- reactiveVal()
-    observe({
-      req(uploaded_data())  # Ensure data is uploaded first
+    # # observe if the calculate OR button is toggled
+    # # updated_data <- reactiveVal()
+    # observe({
+    #   req(uploaded_data())  # Ensure data is uploaded first
+    #   
+    #   # Only proceed if toggle is ON
+    #   if (input$toggle_button) {
+    #     
+    #     # Get the dataframe
+    #     df <- uploaded_data()
+    #     
+    #     # Apply calculation if the Beta column is selected
+    #     if (!is.null(input$BETA_colname) && input$BETA_colname %in% colnames(df)) {
+    #       df$OR <- exp(df[[input$BETA_colname]])
+    #       uploaded_data(df)
+    #       
+    #       # Update the OR column selection
+    #       updateSelectInput(session, "OR_colname", choices = colnames(df), selected = "OR")
+    #     }
+    #     
+    #   } else {
+    #     # Optionally reset or clear values when toggle is OFF
+    #     updateSelectInput(session, "BETA_colname", choices = NULL)
+    #     updateSelectInput(session, "OR_colname", choices = NULL)
+    #   }
+    # })
+    
+    # function to compute OR from beta
+    compute_OR <- reactive({
+      req(current_data())  # Ensure data is available
       
-      # Only proceed if toggle is ON
-      if (input$toggle_button) {
-        
-        # Get the dataframe
-        df <- uploaded_data()
-        
-        # Apply calculation if the Beta column is selected
-        if (!is.null(input$BETA_colname) && input$BETA_colname %in% colnames(df)) {
-          df$OR <- exp(df[[input$BETA_colname]])
-          uploaded_data(df)
-          
-          # Update the OR column selection
-          updateSelectInput(session, "OR_colname", choices = colnames(df), selected = "OR")
-        }
-        
+      data <- current_data()
+      
+      # Determine which operation is selected
+      operation <- input$operation
+      
+      # Determine if Beta is selected for OR calculation
+      if (operation == "AF" && input$effect_estimate_type_AF == "beta") {
+        beta_colname <- input$BETA_colname_AF
+      } else if (operation == "SE" && input$effect_estimate_type_SE == "beta") {
+        beta_colname <- input$BETA_colname_SE
       } else {
-        # Optionally reset or clear values when toggle is OFF
-        updateSelectInput(session, "BETA_colname", choices = NULL)
-        updateSelectInput(session, "OR_colname", choices = NULL)
+        return(data)  # No Beta column selected, return unmodified data
       }
+      
+      # Compute OR only when Beta is used
+      if (!is.null(beta_colname) && beta_colname %in% colnames(data)) {
+        if (operation == "AF") {
+          data$OR_AF <- exp(data[[beta_colname]])  # Compute OR only for CaseControl_AF
+        } else if (operation == "SE") {
+          data$OR_SE <- exp(data[[beta_colname]])  # Compute OR only for CaseControl_SE
+        }
+      }
+      
+      return(data)
     })
     
+    processed_data <- reactive({
+      req(compute_OR())  # Ensure OR is computed if needed
+      compute_OR()       # Return the modified dataset with OR values (if applicable)
+    })
     
     observeEvent(input$run_casecontrolaf, {
-      req(current_data())
+      req(processed_data())
       
-      results_af <- CaseControl_AF(data = current_data(),
-                                   N_case = input$N_case,
-                                   N_control = input$N_control,
-                                   OR_colname = input$OR_colname,
-                                   AF_total_colname = input$AF_total_colname)
+      results_af <- CaseControl_AF(
+        data = processed_data(),
+        N_case = input$N_case,
+        N_control = input$N_control,
+        OR_colname = ifelse(input$effect_estimate_type_AF == "beta", "OR_AF", input$OR_colname_AF),
+        AF_total_colname = input$AF_total_colname
+      )
       # Move to email input page
       # updateNavbarPage(session, "CCAFE App", selected = "Step3")
       results(results_af)
@@ -258,17 +293,17 @@ operationSelectionServer <- function(id, main_session) {
     observeEvent(input$run_casecontrolse, {
       # Move to email input page
       # updateNavbarPage(session, "CCAFE", selected = "Step3")
-      req(uploaded_data())  # Ensure the user has uploaded data
+      req(processed_data())  # Ensure the user has uploaded data
       req(selected_population())
       req(input$user_email)
       
-      uploaded_data <- uploaded_data()
+      uploaded_data <- processed_data()
       selected_population <- selected_population()
       
       user_email <- input$user_email
       N_case_se <- input$N_case_se
       N_control_se <- input$N_control_se
-      OR_colname_se <- input$OR_colname_se
+      OR_colname_se <- ifelse(input$effect_estimate_type_SE == "beta", "OR_SE", input$OR_colname_SE)
       SE_colname_se <- input$SE_colname_se
       chromosome_colname <- input$chromosome_colname
       position_colname <- input$position_colname
