@@ -12,6 +12,7 @@ box::use(
 
 box::use(
   app/view/file_upload[...],
+  app/logic/upload[...],
 )
 
 
@@ -55,15 +56,16 @@ operationSelectionUI <- function(id) {
           
           # Conditional Panel: Only display inputs when data is available
           conditionalPanel(
-            condition = sprintf("input['%s'] != null || input['%s'] > 0", ns("file_upload"), ns("process_file")),
+            condition = sprintf("input['%s'] !== null || input['%s'] > 0", ns("file_upload"), ns("process_file")),
             
             # Operation Selection (Radio Buttons)
             radioButtons(
               ns("operation"), "Select Operation",
               choices = c("CaseControl_AF" = "AF", "CaseControl_SE" = "SE"),
+              selected = character(0),
               inline = TRUE
             ),
-            
+  
             # AF Section
             conditionalPanel(
               condition = sprintf("input['%s'] == 'AF'", ns("operation")),
