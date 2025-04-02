@@ -67,7 +67,7 @@ operationSelectionUI <- function(id) {
               selected = character(0),
               inline = TRUE
             ),
-  
+            
             # AF Section
             conditionalPanel(
               condition = sprintf("input['%s'] == 'AF'", ns("operation")),
@@ -180,8 +180,8 @@ operationSelectionServer <- function(id, main_session) {
         uploaded_data()
       }
     })
-
-     # Render preview of uploaded data or sample data
+    
+    # Render preview of uploaded data or sample data
     observeEvent(input$process_file, {
       output$data_preview <- renderDT({
         req(current_data())
@@ -200,13 +200,13 @@ operationSelectionServer <- function(id, main_session) {
         )
       })
     })
-   
+    
     
     column_names <- reactive({
       req(current_data())
       colnames(current_data())
     })
-      
+    
     selected_population <- reactive({
       input$population  # Automatically updates when user selects a value
     })
@@ -361,7 +361,7 @@ operationSelectionServer <- function(id, main_session) {
             results_se <- handle_se_process$get_result()
             print(str(results_se))
             results(results_se)
-           
+            
             shinyjs::hide("data_preview")
             shinyjs::show("results_preview")
             
