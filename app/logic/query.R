@@ -5,6 +5,7 @@ box::use(
   ghql[...],
   tidyverse[...],
   ratelimitr[...],
+  dplyr[...],
 )
 # ratelimitr is a library for rate limiting function calls, e.g. to 10 per
 # second
