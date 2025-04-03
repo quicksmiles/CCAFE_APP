@@ -126,9 +126,10 @@ operationSelectionUI <- function(id) {
               selectInput(ns("position_colname"), "Position Column:", choices = NULL, selected = "POS"),
               textInput(ns("user_email"), "Email", placeholder = "Enter your email"),
               actionButton(ns("run_casecontrolse"), "Run CaseControl_SE", class = "btn-primary"),
-            )
-            
-          )
+            ),
+          ),
+          
+          actionButton(ns("reset_button"), "Reset All", class = "btn-neutral")
         )
       ),
       
@@ -152,7 +153,6 @@ operationSelectionUI <- function(id) {
           ),
           
           uiOutput(ns("download_results_ui"))
-          #downloadButton(ns("download_results"), "Download Results")
         )
       )
     )
@@ -225,32 +225,6 @@ operationSelectionServer <- function(id, main_session) {
       updateSelectInput(session, "chromosome_colname", choices = column_names(), selected = "chrom")
       updateSelectInput(session, "position_colname", choices = column_names(), selected = "pos")
     })
-    # # observe if the calculate OR button is toggled
-    # # updated_data <- reactiveVal()
-    # observe({
-    #   req(uploaded_data())  # Ensure data is uploaded first
-    #   
-    #   # Only proceed if toggle is ON
-    #   if (input$toggle_button) {
-    #     
-    #     # Get the dataframe
-    #     df <- uploaded_data()
-    #     
-    #     # Apply calculation if the Beta column is selected
-    #     if (!is.null(input$BETA_colname) && input$BETA_colname %in% colnames(df)) {
-    #       df$OR <- exp(df[[input$BETA_colname]])
-    #       uploaded_data(df)
-    #       
-    #       # Update the OR column selection
-    #       updateSelectInput(session, "OR_colname", choices = colnames(df), selected = "OR")
-    #     }
-    #     
-    #   } else {
-    #     # Optionally reset or clear values when toggle is OFF
-    #     updateSelectInput(session, "BETA_colname", choices = NULL)
-    #     updateSelectInput(session, "OR_colname", choices = NULL)
-    #   }
-    # })
     
     # function to compute OR from beta
     compute_OR <- reactive({
@@ -405,7 +379,7 @@ operationSelectionServer <- function(id, main_session) {
     
     # Dynamic Title Update
     output$card_title <- renderUI({
-      if (!is.null(results())) {
+      if (!is.null(results()) & length(input$operation) > 0) {
         if (input$operation == "AF") {
           h4("Results Preview: CaseControl_AF")
         } else if (input$operation == "SE") {
@@ -434,6 +408,57 @@ operationSelectionServer <- function(id, main_session) {
         fwrite(results(), file, sep = "\t", compress = "gzip")
       }
     )
+    
+    # reset button logic
+    observeEvent(input$reset_button, {
+      # clear the data
+      current_data <- reactiveVal()
+      
+      # clear results
+      results <- reactiveVal()
+
+      # reset select data to default
+      updateRadioButtons(session, "data_source", selected = "upload")
+      
+      # Reset all inputs to their default values
+      updateRadioButtons(session, "operation", selected = character(0))  # Clear the radio buttons
+      updateNumericInput(session, "N_case", value = 16550)  # Reset number of cases
+      updateNumericInput(session, "N_control", value = 403923)  # Reset number of controls
+      updateRadioButtons(session, "effect_estimate_type_AF", selected = "beta")  # Reset effect estimate type
+      updateSelectInput(session, "BETA_colname_AF", selected = NULL)  # Reset select input for Beta Column
+      updateSelectInput(session, "OR_colname_AF", selected = NULL)  # Reset select input for Odds Ratio Column
+      updateSelectInput(session, "AF_total_colname", selected = NULL)  # Reset select input for Total AF Column
+      updateSelectInput(session, "population", selected = "nfe")  # Reset population selection
+      updateNumericInput(session, "N_case_se", value = 16550)  # Reset number of cases for SE
+      updateNumericInput(session, "N_control_se", value = 403923)  # Reset number of controls for SE
+      updateRadioButtons(session, "effect_estimate_type_SE", selected = "beta")  # Reset effect estimate type
+      updateSelectInput(session, "BETA_colname_SE", selected = NULL)  # Reset select input for Beta Column
+      updateSelectInput(session, "OR_colname_SE", selected = NULL)  # Reset select input for Odds Ratio Column
+      updateSelectInput(session, "SE_colname_se", selected = NULL)  # Reset SE Column
+      updateSelectInput(session, "chromosome_colname", selected = "CHR")  # Reset Chromosome Column
+      updateSelectInput(session, "position_colname", selected = "POS")  # Reset Position Column
+      updateTextInput(session, "user_email", value = "")  # Reset Email input
+
+      # Hide data and results previews when reset is clicked
+      output$data_preview <- renderDT({
+        # Clear or reset the data preview table 
+        datatable(data.frame())  # Replace with your reset data or empty table
+      })
+      
+      output$results_preview <- renderDT({
+        # Clear or reset the results preview table 
+        datatable(data.frame())  # Replace with your reset data or empty table
+      })
+      
+      # Clear any download UI components
+      output$download_results_ui <- renderUI({
+        # Hide or reset download UI components
+        NULL
+      })
+      
+      # Optionally, you can hide the results by setting `show_results` to FALSE
+      output$show_results <- reactiveVal(FALSE)  # Set this to false to hide results
+    })
     
     return(results)
   })
