@@ -21,6 +21,7 @@ operationSelectionUI <- function(id) {
   ns <- NS(id)
   
   tagList(
+    shinyjs::useShinyjs(), # Enable JavaScript control
     argonRow(
       
       # Left Column with Three Cards
@@ -66,7 +67,7 @@ operationSelectionUI <- function(id) {
               selected = character(0),
               inline = TRUE
             ),
-  
+            
             # AF Section
             conditionalPanel(
               condition = sprintf("input['%s'] == 'AF'", ns("operation")),
@@ -136,11 +137,20 @@ operationSelectionUI <- function(id) {
         width = 8,
         argonCard(
           width = 12,
-          # style = "min-height: 100%; height: calc(100vh - 100px);",  # Full height of the three cards
-          DTOutput(ns("sample_preview")),
-          DTOutput(ns("upload_preview")),
-          DTOutput(ns("data_preview")),
-          DTOutput(ns("results_preview")),
+          
+          # dynamic title
+          uiOutput(ns("card_title")),
+          
+          conditionalPanel(
+            condition = sprintf("!%s", ns("show_results")),  # Show data preview when results are not available
+            DTOutput(ns("data_preview"))
+          ),
+          
+          conditionalPanel(
+            condition = sprintf("%s", ns("show_results")),  # Show results preview when results are available
+            DTOutput(ns("results_preview"))
+          ),
+          
           downloadButton(ns("download_results"), "Download Results")
         )
       )
@@ -170,39 +180,33 @@ operationSelectionServer <- function(id, main_session) {
         uploaded_data()
       }
     })
-   
-     # Render preview of uploaded data or sample data
+    
+    # Render preview of uploaded data or sample data
     observeEvent(input$process_file, {
       output$data_preview <- renderDT({
         req(current_data())
         
-        # Properly render DataTable with class and ID inside the datatable function
         datatable(
           current_data(),
-          
-          # DataTable options
           options = list(
-            dom = 'Bfrtip',                       # Include buttons
+            dom = 'Bfrtip',
             paging = TRUE,
             searching = TRUE,
             ordering = TRUE,
             scrollX = TRUE,
             autoWidth = TRUE
           ),
-          
-          # Add extensions and styling
-          # extensions = c('Buttons', 'Select'),
-          rownames = FALSE                        # Hide row names
+          rownames = FALSE
         )
       })
     })
-   
+    
     
     column_names <- reactive({
       req(current_data())
       colnames(current_data())
     })
-      
+    
     selected_population <- reactive({
       input$population  # Automatically updates when user selects a value
     })
@@ -295,6 +299,9 @@ operationSelectionServer <- function(id, main_session) {
       # Move to email input page
       # updateNavbarPage(session, "CCAFE App", selected = "Step3")
       results(results_af)
+      
+      shinyjs::hide("data_preview")
+      shinyjs::show("results_preview")
     })
     
     observeEvent(input$run_casecontrolse, {
@@ -354,7 +361,10 @@ operationSelectionServer <- function(id, main_session) {
             results_se <- handle_se_process$get_result()
             print(str(results_se))
             results(results_se)
-            print(str(results()))
+            
+            shinyjs::hide("data_preview")
+            shinyjs::show("results_preview")
+            
             # Notify the user and allow navigation to the next step
             print("ControlCase_SE method was executed successfully!")
             # showNotification("Process completed successfully!", type = "message")
@@ -370,18 +380,14 @@ operationSelectionServer <- function(id, main_session) {
     
     # Display the first 10 rows of the results dataframe
     output$results_preview <- renderDT({
-      req(results())
-      req(column_names())
+      req(results())  # Ensure results exist
       
-      # Convert results to a formatted table (4 decimal places, scientific notation)
       results_formatted <- format(results(), digits = 4, scientific = TRUE)
       
-      # Identify newly generated columns (those NOT in column_names)
-      new_columns <- setdiff(colnames(results_formatted), column_names())
+      new_columns <- setdiff(colnames(results_formatted), colnames(current_data()))
       
-      # Ensure the DataTable is displayed correctly
       datatable(
-        results_formatted, 
+        results_formatted,
         options = list(
           dom = 't',
           paging = TRUE,
@@ -392,9 +398,24 @@ operationSelectionServer <- function(id, main_session) {
         )
       ) %>%
         formatStyle(
-          columns = new_columns,  # Dynamically highlight new columns
+          columns = new_columns,
           color = "green"
         )
+    })
+    
+    # Dynamic Title Update
+    output$card_title <- renderUI({
+      if (!is.null(results())) {
+        if (input$operation == "AF") {
+          h4("Results Preview: CaseControl_AF")
+        } else if (input$operation == "SE") {
+          h4("Results Preview: CaseControl_SE")
+        } else {
+          h4("Results Preview")
+        }
+      } else {
+        h4("Data Preview")
+      }
     })
     
     output$download_results <- downloadHandler(
