@@ -306,7 +306,6 @@ operationSelectionServer <- function(id, main_session) {
     
     observeEvent(input$run_casecontrolse, {
       # Move to email input page
-      # updateNavbarPage(session, "CCAFE", selected = "Step3")
       req(processed_data())  # Ensure the user has uploaded data
       req(selected_population())
       req(input$user_email)
@@ -331,7 +330,7 @@ operationSelectionServer <- function(id, main_session) {
                  OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {
           # FIXME: move this to app.R, and if that doesn't work, then move it back
           # Source the merge.R script
-          source("../CCAFE/app/utils/handle_se.R")
+          source("../CCAFE/app/logic/handle_se.R")
           handle_se(selected_population, user_email, uploaded_data, N_case_se, N_control_se,
                     OR_colname_se, SE_colname_se, chromosome_colname, position_colname) # Execute function
         }, 
