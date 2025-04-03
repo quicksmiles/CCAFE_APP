@@ -12,7 +12,7 @@ box::use(
 )
 # Link query.R file and its functions to be executed once merge.R is run 
 box::use(
-  app/logic/query,
+  app/logic/query[...],
 )
 
 do_merge <- function(uploaded_data, user_selected_population) {
