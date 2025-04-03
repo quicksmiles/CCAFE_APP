@@ -10,16 +10,16 @@ box::use(
 )
 
 box::use(
-  ../app / logic / upload[...],
-  ../app / logic / email[...],
-  ../app / logic / handle_se[...],
-  ../app / logic / merge[...],
-  ../app / logic / query[...],
-  ../app / view / operation_selection[operationSelectionUI, operationSelectionServer],
-  ../app / view / file_upload[fileUploadUI, fileUploadServer],
-  ../app / view / home_page[...],
-  ../app / view / user_guide[...],
-  ../app / view / r_package[...]
+  app/logic/upload[...],
+  app/logic/email[...],
+  app/logic/handle_se[...],
+  app/logic/merge[...],
+  app/logic/query[...],
+  app/view/operation_selection[operationSelectionUI, operationSelectionServer],
+  app/view/file_upload[fileUploadUI, fileUploadServer],
+  app/view/home_page[...],
+  app/view/user_guide[...],
+  app/view/r_package[...],
 )
 
 load_dot_env()
