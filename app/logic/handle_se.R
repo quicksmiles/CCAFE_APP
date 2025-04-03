@@ -3,9 +3,9 @@ box::use(
 )
 
 box::use(
-  app/logic/merge,
-  app/logic/email,
-  )
+  app/logic/merge[...],
+  app/logic/email[...],
+)
 
 # To install this package from GitHub:
 #   
