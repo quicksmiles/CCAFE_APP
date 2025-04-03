@@ -151,7 +151,8 @@ operationSelectionUI <- function(id) {
             DTOutput(ns("results_preview"))
           ),
           
-          downloadButton(ns("download_results"), "Download Results")
+          uiOutput(ns("download_results_ui"))
+          #downloadButton(ns("download_results"), "Download Results")
         )
       )
     )
@@ -415,6 +416,14 @@ operationSelectionServer <- function(id, main_session) {
       } else {
         h4("Data Preview")
       }
+    })
+    
+    output$download_results_ui <- renderUI({
+      req(results()) # ensure results exist before displaying button
+      argonCard(
+        width = 12,
+        downloadButton(ns("download_results"), "Download Results", class = "btn btn-success")
+      )
     })
     
     output$download_results <- downloadHandler(
