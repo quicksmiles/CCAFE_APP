@@ -32,7 +32,7 @@ ui <- function(id) {
   argonDashPage(
     title = "CCAFE",
     description = "Case and Control Allele Frequency Estimation Shiny App",
-    header = argonDashHeader(tags$style(HTML(".header { 
+    header = argonDashHeader(tags$style(HTML(".header {
                                               position: fixed;
                                               top: 0;
                                               left: 0;
@@ -42,7 +42,7 @@ ui <- function(id) {
                              color = "primary",
                              separator = FALSE,
                              bottom_padding = 4,
-                             top_padding = 4,
+                             top_padding = 5,
                             
                             ),
     sidebar = NULL,
@@ -131,3 +131,4 @@ server <- function(id) {
     results <- operationSelectionServer("operation_selection", session)
   })
 }
+
