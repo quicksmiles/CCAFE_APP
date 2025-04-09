@@ -12,6 +12,7 @@ rpackageUI <- function(id) {
       width = 12,
       argonCard(
         width = 12,
+        shadow = TRUE,
         tags$iframe(
           src = "https://wolffha.github.io/CCAFE_documentation/index.html",
           width = "100%",
