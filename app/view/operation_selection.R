@@ -320,6 +320,7 @@ operationSelectionServer <- function(id, main_session) {
       # updateNavbarPage(session, "CCAFE App", selected = "Step3")
       results(results_af)
       shinyjs::hide("data_preview")
+      shinyjs::show("results_preview")
       show_results(TRUE)
     })
     
@@ -461,6 +462,8 @@ operationSelectionServer <- function(id, main_session) {
       results(NULL)
       uploaded_data(NULL)
       show_results(FALSE)
+      
+      reset("file")
 
       # reset select data to default
       updateRadioButtons(session, "data_source", selected = "upload")
@@ -487,16 +490,12 @@ operationSelectionServer <- function(id, main_session) {
       # Hide data and results previews when reset is clicked
      
       # Clear or reset the data preview table 
-  
-      #removeUI("#data_preview")  # Replace with your reset data or empty table
-      
-      output$data_preview <- NULL
-      
-      removeUI("#results_preview")
-      removeUI("#download_results_ui")
+      shinyjs::hide("results_preview")
+    
+      output$data_preview <- renderDT(NULL) # reset to null DT
       
       shinyjs::show("data_preview")
-      reset("file")
+      
     })
     
     return(results)
