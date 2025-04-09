@@ -32,6 +32,9 @@ operationSelectionUI <- function(id) {
         argonCard(
           title = "Data Selection",
           width = 12,
+          background_color = "white",
+          shadow = TRUE,
+          border_level = 5,
           radioButtons(
             ns("data_source"),
             label = "Choose data source:",
@@ -42,7 +45,8 @@ operationSelectionUI <- function(id) {
           
           conditionalPanel(
             condition = sprintf("input['%s'] == 'upload'", ns("data_source")),
-            fileUploadUI(ns("file_upload"))
+            fileInput(ns("file"), "Upload GWAS summary statistics (compressed text or VCF file)", accept = c(".bgz", ".gz")),
+            actionButton(ns("process_file"), "Preview Data", class = "btn btn-default btn-round"),
           ),
           
           conditionalPanel(
@@ -55,10 +59,13 @@ operationSelectionUI <- function(id) {
         argonCard(
           title = "Inputs",
           width = 12,
+          background_color = "white",
+          shadow = TRUE,
+          border_level = 5,
           
           # Conditional Panel: Only display inputs when data is available
           conditionalPanel(
-            condition = sprintf("input['%s'] !== null || input['%s'] > 0", ns("file_upload"), ns("process_file")),
+            condition = sprintf("input['%s'] !== null || input['%s'] > 0", ns("file"), ns("process_file")),
             
             # Operation Selection (Radio Buttons)
             radioButtons(
@@ -138,6 +145,8 @@ operationSelectionUI <- function(id) {
         width = 8,
         argonCard(
           width = 12,
+          background_color = "white",
+          shadow = TRUE,
           
           # dynamic title
           uiOutput(ns("card_title")),
@@ -162,7 +171,11 @@ operationSelectionUI <- function(id) {
 operationSelectionServer <- function(id, main_session) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-    results <- reactiveVal()
+    
+    results <- reactiveVal(NULL)
+    current_data <- reactiveVal(NULL)
+    show_results <- reactiveVal(FALSE)
+    uploaded_data <- reactiveVal(NULL)
     
     # Reactive function to load sample data
     getSampleData <- reactive({
@@ -170,23 +183,55 @@ operationSelectionServer <- function(id, main_session) {
       sampleDat
     })
     
-    uploaded_data <- fileUploadServer("file_upload", main_session)
-    
-    # Choose between uploaded data or sample data
-    current_data <- reactive({
-      if (input$data_source == "sample") {
-        getSampleData()
-      } else {
-        req(uploaded_data())
-        uploaded_data()
+    observeEvent(input$file, {
+      req(input$file)
+      
+      # Try processing the uploaded file
+      data <- tryCatch({
+        upload_file(input$file, input$file$name, input$file$datapath)
+      }, error = function(e) {
+        showNotification(paste("Error processing file:", e$message), type = "error")
+        NULL
+      })
+      
+      # When the files data is correctly processed
+      if (!is.null(data)) {
+        # Pass the uploaded file data to reactive value
+        uploaded_data(data)
+        
+        # Try to save user file data to disk space
+        saved_file <- tryCatch(
+          save_file(uploaded_data()),
+          # Throw an error if user file data is not saved successfully
+          error = function(e) {
+            showNotification(e$message, type = "error")
+            return(NULL)
+          }
+        )
+      } else{
+        # In the case where there is no file to process, display error msg to user
+        showModal(modalDialog(
+          title = "Error",
+          "Please upload a file before clicking 'Process File'.",
+          footer = modalButton("OK"),
+          easyClose = TRUE
+        ))
+        return() # Exit the error msg
       }
     })
     
     # Render preview of uploaded data or sample data
     observeEvent(input$process_file, {
+      
+      if (input$data_source == "sample") {
+        current_data(getSampleData())
+      } else if (input$data_source == "upload") {
+        current_data(uploaded_data())
+      }
+      
       output$data_preview <- renderDT({
+        req(!show_results())
         req(current_data())
-        
         datatable(
           current_data(),
           options = list(
@@ -274,9 +319,8 @@ operationSelectionServer <- function(id, main_session) {
       # Move to email input page
       # updateNavbarPage(session, "CCAFE App", selected = "Step3")
       results(results_af)
-      
       shinyjs::hide("data_preview")
-      shinyjs::show("results_preview")
+      show_results(TRUE)
     })
     
     observeEvent(input$run_casecontrolse, {
@@ -355,7 +399,7 @@ operationSelectionServer <- function(id, main_session) {
     # Display the first 10 rows of the results dataframe
     output$results_preview <- renderDT({
       req(results())  # Ensure results exist
-      
+      req(show_results())
       results_formatted <- format(results(), digits = 4, scientific = TRUE)
       
       new_columns <- setdiff(colnames(results_formatted), colnames(current_data()))
@@ -412,10 +456,11 @@ operationSelectionServer <- function(id, main_session) {
     # reset button logic
     observeEvent(input$reset_button, {
       # clear the data
-      current_data <- reactiveVal()
-      
       # clear results
-      results <- reactiveVal()
+      current_data(NULL)
+      results(NULL)
+      uploaded_data(NULL)
+      show_results(FALSE)
 
       # reset select data to default
       updateRadioButtons(session, "data_source", selected = "upload")
@@ -440,24 +485,18 @@ operationSelectionServer <- function(id, main_session) {
       updateTextInput(session, "user_email", value = "")  # Reset Email input
 
       # Hide data and results previews when reset is clicked
-      output$data_preview <- renderDT({
-        # Clear or reset the data preview table 
-        datatable(data.frame())  # Replace with your reset data or empty table
-      })
+     
+      # Clear or reset the data preview table 
+  
+      #removeUI("#data_preview")  # Replace with your reset data or empty table
       
-      output$results_preview <- renderDT({
-        # Clear or reset the results preview table 
-        datatable(data.frame())  # Replace with your reset data or empty table
-      })
+      output$data_preview <- NULL
       
-      # Clear any download UI components
-      output$download_results_ui <- renderUI({
-        # Hide or reset download UI components
-        NULL
-      })
+      removeUI("#results_preview")
+      removeUI("#download_results_ui")
       
-      # Optionally, you can hide the results by setting `show_results` to FALSE
-      output$show_results <- reactiveVal(FALSE)  # Set this to false to hide results
+      shinyjs::show("data_preview")
+      reset("file")
     })
     
     return(results)
