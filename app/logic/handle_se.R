@@ -46,7 +46,7 @@ handle_se <- function(selected_population, user_email, uploaded_data, N_case_se,
   
   # Read stored metadata
   metadata_file <- "../CCAFE/results_metadata.csv"
-  metadata <- read.csv(metadata_file)
+  metadata <- utils::read.csv(metadata_file)
   
   # Only run when there are entries in metadata
   if (nrow(metadata) > 0) {
@@ -68,7 +68,7 @@ handle_se <- function(selected_population, user_email, uploaded_data, N_case_se,
     }
     
     # Update metadata file (overwrite with remaining entries)
-    write.csv(entries_to_keep, metadata_file, row.names = FALSE)
+    utils::write.csv(entries_to_keep, metadata_file, row.names = FALSE)
   }
   
   return(results_se)
