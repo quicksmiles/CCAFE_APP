@@ -8,7 +8,8 @@
 box::use(
   data.table[...],
   dplyr[...],
-  purrr[...]
+  purrr[...],
+  stats[setNames],
 )
 # Link query.R file and its functions to be executed once merge.R is run 
 box::use(
