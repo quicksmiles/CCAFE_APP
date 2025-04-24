@@ -7,6 +7,7 @@ box::use(
   reactR[...],
   shiny[...],
   shinyjs[...],
+  stats[...],
   DT[...],
 )
 
@@ -106,7 +107,17 @@ operationSelectionUI <- function(id) {
             conditionalPanel(
               condition = sprintf("input['%s'] == 'SE'", ns("operation")),
               selectInput(ns("population"), "Select Population for Bias Correction",
-                          choices = c("total", "afr", "ami", "amr", "asj", "eas", "fin", "mid", "nfe", "remaining", "sas"),
+                          choices = c("total", 
+                                      "afr", 
+                                      "ami", 
+                                      "amr", 
+                                      "asj", 
+                                      "eas", 
+                                      "fin", 
+                                      "mid", 
+                                      "nfe", 
+                                      "remaining", 
+                                      "sas"),
                           selected = "nfe"),
               numericInput(ns("N_case_se"), "Number of cases:", value = 16550),
               numericInput(ns("N_control_se"), "Number of controls:", value = 403923),
@@ -180,6 +191,9 @@ operationSelectionServer <- function(id, main_session) {
     # Reactive function to load sample data
     getSampleData <- reactive({
       sampleDat <- utils::read.table("app/static/sampledata.txt", header = T)
+      colnames(sampleDat)[1:4] <- c("chrom", "pos", "ref", "alt")
+      sampleDat$chrom <- ifelse(grepl("^chr", sampleDat$chrom), gsub("^chr", "", sampleDat$chrom), sampleDat$chrom)
+      sampleDat <- sampleDat[complete.cases(sampleDat), ]
       sampleDat
     })
     
@@ -378,12 +392,12 @@ operationSelectionServer <- function(id, main_session) {
           if (handle_se_process$get_exit_status() == 0) {
             print("Completed querying data and running CaseControl_SE()")
             results_se <- handle_se_process$get_result()
-            print(str(results_se))
+            # print(str(results_se))
             results(results_se)
             
             shinyjs::hide("data_preview")
             shinyjs::show("results_preview")
-            
+            show_results(TRUE)
             # Notify the user and allow navigation to the next step
             print("ControlCase_SE method was executed successfully!")
             # showNotification("Process completed successfully!", type = "message")
