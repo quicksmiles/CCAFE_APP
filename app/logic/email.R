@@ -1,5 +1,6 @@
 box::use(
-  httr[POST]
+  httr[POST, authenticate, status_code],
+  data.table[fwrite],
 )
 
 save_results <- function(results, user_email) {
@@ -10,7 +11,7 @@ save_results <- function(results, user_email) {
   
   # Store metadata (email, file path) for later retrieval
   metadata <- data.frame(email = user_email, file = file_path, timestamp = Sys.time())
-  write.csv(metadata, "../CCAFE/results_metadata.csv", row.names = FALSE, append = TRUE) #change file path as needed
+  utils::write.csv(metadata, "../CCAFE/results_metadata.csv", row.names = FALSE, append = TRUE) #change file path as needed
 }
 
 send_email <- function(email, file_path) {
