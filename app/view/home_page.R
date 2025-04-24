@@ -78,7 +78,7 @@ homeUI <- function(id) {
           background_color = "transparent",
           tags$div(
             style = "text-align: center;",
-            argonLead("Developed by: Your Name | Contact: your.email@example.com")
+            argonLead("Developed by: Hugo Lemus | Contact: ")
           )
         )
       )
