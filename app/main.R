@@ -6,7 +6,7 @@ box::use(
   dotenv[load_dot_env],
   reactR[...],
   shiny[...],
-  shinyjs[...]
+  shinyjs[...],
 )
 
 box::use(
