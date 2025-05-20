@@ -19,6 +19,9 @@ guideUI <- function(id) {
             "module"
           )
         ),
+        reactableOutput(ns("ccafe_description_table"))
+      )
+    ),
         br(),
         argonTabSet(
           id = ns("analysis_steps"),
@@ -277,8 +280,6 @@ guideUI <- function(id) {
           )
         )
       )
-    )
-  )
 }
 
 # Server Module
