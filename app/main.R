@@ -33,18 +33,22 @@ ui <- function(id) {
     title = "CCAFE",
     description = "Case and Control Allele Frequency Estimation Shiny App",
     header = argonDashHeader(tags$style(HTML(".header {
-                                              position: fixed;
-                                              top: 0;
-                                              left: 0;
-                                              right: 0;
-                                              z-index: auto;
-                                              width: 100%;}")),
+                                                position: fixed;
+                                                top: 0;
+                                                left: 0;
+                                                right: 0;
+                                                z-index: 200;
+                                                width: 100%;
+                                              }
+                                              .main-content .navbar-top {
+                                                z-index: 201;
+                                              }")),
                              color = "primary",
                              separator = FALSE,
                              bottom_padding = 4,
                              top_padding = 5,
-                            
-                            ),
+                             
+    ),
     sidebar = NULL,
     navbar = argonDashNavbar(headroom = FALSE,
                              style = "display: flex; 
@@ -64,7 +68,10 @@ ui <- function(id) {
                                         tags$div(
                                           class = "navbar-brand pt-0 my-0",
                                           style = "display: flex; align-items: center; justify-content: flex-start;",
-                                          tags$h1("CCAFE", style = "color: white;"),
+                                          tags$a(
+                                            href = "https://hendrickslab.cu-dbmi.dev/ccafe/",
+                                            tags$h1("CCAFE", style = "color: white; margin:0;")
+                                          )
                                         )
                                       ),
                                       
