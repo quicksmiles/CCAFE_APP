@@ -1,25 +1,15 @@
 box::use(
-  argonDash[...],
-  argonR[...],
-  CCAFE[...],
-  htmltools[...],
+  argonDash[argonDashBody, argonDashHeader, argonDashNavbar, argonDashPage, argonSidebarItem, argonSidebarMenu, argonTabItem, argonTabItems],
+  argonR[argonColumn, argonNavMenu, argonRow],
   dotenv[load_dot_env],
-  reactR[...],
-  shiny[...],
-  shinyjs[...],
+  shiny[HTML, moduleServer, NS, tags],
 )
 
 box::use(
-  app/logic/upload[...],
-  app/logic/email[...],
-  app/logic/handle_se[...],
-  app/logic/merge[...],
-  app/logic/query[...],
-  app/view/operation_selection[operationSelectionUI, operationSelectionServer],
-  app/view/file_upload[fileUploadUI, fileUploadServer],
-  app/view/home_page[...],
-  app/view/user_guide[...],
-  app/view/r_package[...],
+  app/view/home_page,
+  app/view/operation_selection,
+  app/view/r_package,
+  app/view/user_guide,
 )
 
 load_dot_env()
@@ -47,7 +37,6 @@ ui <- function(id) {
                              separator = FALSE,
                              bottom_padding = 4,
                              top_padding = 5,
-                             
     ),
     sidebar = NULL,
     navbar = argonDashNavbar(headroom = FALSE,
@@ -103,25 +92,25 @@ ui <- function(id) {
                                         )
                                       )
                           )
-            ),
+    ),
     body = argonDashBody(
       style = "margin-top: 80px;",
       argonTabItems(
         argonTabItem(
           tabName = "home",
-          homeUI(ns("home"))
+          home_page$homeUI(ns("home"))
         ),
         argonTabItem(
           tabName = "guide",
-          guideUI(ns("guide"))
+          user_guide$guideUI(ns("guide"))
         ),
         argonTabItem(
           tabName = "analysis",
-          operationSelectionUI(ns("operation_selection"))
+          operation_selection$operationSelectionUI(ns("operation_selection"))
         ),
         argonTabItem(
           tabName = "rpackage",
-          rpackageUI(ns("rpackage"))
+          r_package$rpackageUI(ns("rpackage"))
         )
       )
     )
@@ -131,11 +120,10 @@ ui <- function(id) {
 #' @export
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    # welcomeServer("welcome")
-    guideServer("guide")
+    user_guide$guideServer("guide")
     
     # Operation selection module
-    results <- operationSelectionServer("operation_selection", session)
+    results <- operation_selection$operationSelectionServer("operation_selection", session)
   })
 }
 
