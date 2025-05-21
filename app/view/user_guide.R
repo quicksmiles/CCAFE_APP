@@ -292,12 +292,12 @@ guideServer <- function(id) {
           "Analysis: CaseControlSE()"
         ),
         input = c(
-          "position, chromosome, total allele frequency",
-          "position, chromosome, odds ratio, population group"
+          "number of cases, number of controls, odds ratio (OR), total allele frequency",
+          "position, chromosome, number of cases, number of controls, odds ratio (OR) or beta, standard error (SE), population group, email"
         ),
         output = c(
           "Table 00-0.00 GWAS Summary Statistics: Unadjusted Case and Control Allele Frequencies",
-          "Table 00-0.00 GWAS Summary Statistics: Adjusted Case and Control Allele Frequencies"
+          "Table 00-0.00 GWAS Summary Statistics: Unadjusted and Adjusted Case and Control Allele Frequencies"
         )
       )
       reactable(ccafe_description_table)
