@@ -42,7 +42,7 @@ handle_se <- function(selected_population, user_email, uploaded_data, N_case_se,
   )
   
   save_results(results_se, user_email)
-  print("Saved SE results")
+  message("Saved SE results")
   
   # Read stored metadata
   results_dir <- file.path(Sys.getenv("APP_ROOT", unset="../CCAFE"), "results")
@@ -61,7 +61,7 @@ handle_se <- function(selected_population, user_email, uploaded_data, N_case_se,
       if (send_email(email, file_path)) {
         # Delete the file after successful email
         file.remove(file_path)
-        print(paste("Deleted file:", file_path))
+        message(paste("Deleted file:", file_path))
         
         # Remove entry from metadata
         entries_to_keep <- entries_to_keep[-i, ]
@@ -73,5 +73,5 @@ handle_se <- function(selected_population, user_email, uploaded_data, N_case_se,
   }
   
   return(results_se)
-  print("ControlCase_SE method was executed successfully!")
+  message("ControlCase_SE method was executed successfully!")
 }

@@ -41,10 +41,10 @@ send_email <- function(email, file_path) {
   )
   
   if (status_code(res) == 200) {
-    print(paste("Email sent to:", email))
+    message(paste("Email sent to:", email))
     return(TRUE)
   } else {
-    print("Email sending failed.")
+    message("Email sending failed.")
     return(FALSE)
   }
 }
