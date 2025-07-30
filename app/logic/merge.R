@@ -109,7 +109,7 @@ do_merge <- function(uploaded_data, user_selected_population) {
   final_merge <- final_merge[ , -((start_col + 1):(end_col - 1)), drop = FALSE]
   
   maf_column <- paste0("MAF_", user_selected_population)
-  # print(af_column)
+  # message(af_column)
   final_merge <- final_merge[final_merge[[maf_column]] > 0.01, ]
   return(final_merge)
 }

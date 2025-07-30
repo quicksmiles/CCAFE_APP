@@ -4,14 +4,22 @@ box::use(
 )
 
 save_results <- function(results, user_email) {
+  # build path to results as subdirectory of app root
+  results_dir <- file.path(Sys.getenv("APP_ROOT", unset="../CCAFE"), "results")
+
+  # ensure the results path exists, creating it if necessary
+  if (!dir.exists(results_dir)) {
+    dir.create(results_dir, recursive = TRUE)
+  }
+
   timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-  file_path <- paste0("../CCAFE/results_", timestamp, ".text.gz") # change file path as needed
+  file_path <- file.path(results_dir, paste0("results_", timestamp, ".text.gz")) # change file path as needed
   
   fwrite(results, file_path, sep = "\t", compress = "gzip")
   
   # Store metadata (email, file path) for later retrieval
   metadata <- data.frame(email = user_email, file = file_path, timestamp = Sys.time())
-  utils::write.csv(metadata, "../CCAFE/results_metadata.csv", row.names = FALSE, append = TRUE) #change file path as needed
+  utils::write.csv(metadata, file.path(results_dir, "results_metadata.csv"), row.names = FALSE, append = TRUE) #change file path as needed
 }
 
 send_email <- function(email, file_path) {
@@ -33,10 +41,10 @@ send_email <- function(email, file_path) {
   )
   
   if (status_code(res) == 200) {
-    print(paste("Email sent to:", email))
+    message(paste("Email sent to:", email))
     return(TRUE)
   } else {
-    print("Email sending failed.")
+    message("Email sending failed.")
     return(FALSE)
   }
 }

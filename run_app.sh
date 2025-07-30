@@ -11,10 +11,11 @@
 # http://localhost:3850/ccafe/
 
 IMAGE_TAG=latest
-IMAGE=ccafe_app:${IMAGE_TAG}
+IMAGE=us-central1-docker.pkg.dev/cuhealthai-sandbox/hendrickslab/ccafe_app:${IMAGE_TAG}
 
 docker build --platform linux/amd64 -f ./docker/Dockerfile -t ${IMAGE} . &&
 docker run  --platform linux/amd64 --name ccafe_app --rm -it \
     -p 3850:3838 \
     -v $(pwd):/srv/shiny-server/app/ \
+    -e APP_ROOT=/srv/shiny-server/app \
     ${IMAGE}

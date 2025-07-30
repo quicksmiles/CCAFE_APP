@@ -364,7 +364,7 @@ operationSelectionServer <- function(id, main_session) {
                  OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {
           # FIXME: move this to app.R, and if that doesn't work, then move it back
           # Source the merge.R script
-          source("../CCAFE/app/logic/handle_se.R")
+          source(file.path(Sys.getenv("APP_ROOT", unset="../CCAFE"), "app/logic/handle_se.R"))
           handle_se(selected_population, user_email, uploaded_data, N_case_se, N_control_se,
                     OR_colname_se, SE_colname_se, chromosome_colname, position_colname) # Execute function
         }, 
@@ -372,39 +372,39 @@ operationSelectionServer <- function(id, main_session) {
                     OR_colname_se, SE_colname_se, chromosome_colname, position_colname), 
         supervise = TRUE
       )
-      print(processx::poll(list(handle_se_process), 1000))
+      message(processx::poll(list(handle_se_process), 1000))
       # Poll for completion of merge process
       observe({
         if (handle_se_process$poll_io(0)["process"] != "ready") {
           # If process is still running, don't do anything yet
-          print("still querying...")
-          print(processx::poll(list(handle_se_process), 60000))
-          print(handle_se_process$get_exit_status())
-          print(handle_se_process$read_error())
-          print(handle_se_process$read_output())
+          message("still querying...")
+          message(processx::poll(list(handle_se_process), 60000))
+          message(handle_se_process$get_exit_status())
+          message(handle_se_process$read_error())
+          message(handle_se_process$read_output())
           showNotification("Still querying...", type = "message")
           invalidateLater(60000, session) # Poll every minute
           # Navigate to the email input page
         } else {
-          print("completed query succesful...")
-          print(handle_se_process$get_exit_status())
+          message("completed query succesful...")
+          message(handle_se_process$get_exit_status())
           # Process completed
           if (handle_se_process$get_exit_status() == 0) {
-            print("Completed querying data and running CaseControl_SE()")
+            message("Completed querying data and running CaseControl_SE()")
             results_se <- handle_se_process$get_result()
-            # print(str(results_se))
+            # message(str(results_se))
             results(results_se)
             
             shinyjs::hide("data_preview")
             shinyjs::show("results_preview")
             show_results(TRUE)
             # Notify the user and allow navigation to the next step
-            print("ControlCase_SE method was executed successfully!")
+            message("ControlCase_SE method was executed successfully!")
             # showNotification("Process completed successfully!", type = "message")
             
           } else {
             # Handle errors
-            print("Error occurred after querying and merging was finished, did not go into CC_SE")
+            message("Error occurred after querying and merging was finished, did not go into CC_SE")
             # showNotification("Error occurred during processing.", type = "error")
           }
         }

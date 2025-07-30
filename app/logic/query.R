@@ -146,7 +146,7 @@ do_query <- function(uploaded_data) {
   })
 
   # Display system run time for query 
-  print(full_query_runtime)
+  message(full_query_runtime)
 
   # Combine all variant query results from all generated range values
   query_results <- bind_rows(lapply(results, function(res){
