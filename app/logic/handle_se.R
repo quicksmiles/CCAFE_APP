@@ -45,7 +45,8 @@ handle_se <- function(selected_population, user_email, uploaded_data, N_case_se,
   print("Saved SE results")
   
   # Read stored metadata
-  metadata_file <- "../CCAFE/results_metadata.csv"
+  results_dir <- file.path(Sys.getenv("APP_ROOT", unset="../CCAFE"), "results")
+  metadata_file <- file.path(results_dir, "results_metadata.csv")
   metadata <- utils::read.csv(metadata_file)
   
   # Only run when there are entries in metadata

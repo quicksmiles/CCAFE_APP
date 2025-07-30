@@ -364,7 +364,7 @@ operationSelectionServer <- function(id, main_session) {
                  OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {
           # FIXME: move this to app.R, and if that doesn't work, then move it back
           # Source the merge.R script
-          source("../CCAFE/app/logic/handle_se.R")
+          source(file.path(Sys.getenv("APP_ROOT", unset="../CCAFE"), "app/logic/handle_se.R"))
           handle_se(selected_population, user_email, uploaded_data, N_case_se, N_control_se,
                     OR_colname_se, SE_colname_se, chromosome_colname, position_colname) # Execute function
         }, 
