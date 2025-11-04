@@ -277,8 +277,8 @@ operationSelectionServer <- function(id, main_session) {
       req(column_names())
       req(current_data())
       
-      updateSelectInput(session, "BETA_colname_AF", choices = column_names(), selected = "BETA")
-      updateSelectInput(session, "BETA_colname_SE", choices = column_names(), selected = "BETA")
+      updateSelectInput(session, "BETA_colname_AF", choices = column_names(), selected = "beta")
+      updateSelectInput(session, "BETA_colname_SE", choices = column_names(), selected = "beta")
       updateSelectInput(session, "OR_colname_AF", choices = column_names(), selected = "OR")
       updateSelectInput(session, "OR_colname_SE", choices = column_names(), selected = "OR")
       updateSelectInput(session, "AF_total_colname", choices = column_names(), selected = "true_maf_pop")
