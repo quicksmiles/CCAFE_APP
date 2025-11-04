@@ -47,13 +47,15 @@ operationSelectionUI <- function(id) {
           conditionalPanel(
             condition = sprintf("input['%s'] == 'upload'", ns("data_source")),
             fileInput(ns("file"), "Upload GWAS summary statistics (compressed text or VCF file)", accept = c(".bgz", ".gz")),
-            actionButton(ns("process_file"), "Preview Data", class = "btn btn-default btn-round"),
+            # actionButton(ns("process_file"), "Preview Data", class = "btn btn-default btn-round"),
           ),
           
           conditionalPanel(
             condition = sprintf("input['%s'] == 'sample'", ns("data_source")),
-            actionButton(ns("process_file"), "Preview Data", class = "btn btn-default btn-round")
-          )
+            # actionButton(ns("process_file"), "Preview Data", class = "btn btn-default btn-round")
+          ),
+
+          actionButton(ns("process_file"), "Preview Data", class = "btn btn-default btn-round")
         ),
         
         # Inputs Card
