@@ -20,6 +20,8 @@ do_merge <- function(uploaded_data, user_selected_population) {
   # call query method
   query_results <- do_query(uploaded_data)
 
+  message("Merging uploaded data with gnomAD data...")
+
   # merge user data and gnomAD data by chromosome, position combination values
   combined_results <- merge(uploaded_data, query_results, by = c("chrom", "pos"))
   combined_results <- combined_results %>% filter(map_lgl(combined_results$genome$populations, ~ !is.null(.)))
@@ -111,5 +113,8 @@ do_merge <- function(uploaded_data, user_selected_population) {
   maf_column <- paste0("MAF_", user_selected_population)
   # message(af_column)
   final_merge <- final_merge[final_merge[[maf_column]] > 0.01, ]
+
+  message("Completed merge process")
+
   return(final_merge)
 }
