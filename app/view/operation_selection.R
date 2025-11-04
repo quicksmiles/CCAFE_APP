@@ -189,6 +189,7 @@ operationSelectionServer <- function(id, main_session) {
     current_data <- reactiveVal(NULL)
     show_results <- reactiveVal(FALSE)
     uploaded_data <- reactiveVal(NULL)
+    bg_job <- reactiveVal(NULL)
     
     # Reactive function to load sample data
     getSampleData <- reactive({
@@ -356,61 +357,104 @@ operationSelectionServer <- function(id, main_session) {
       SE_colname_se <- input$SE_colname_se
       chromosome_colname <- input$chromosome_colname
       position_colname <- input$position_colname
+
+      # save upload_data to a tempfile so we don't have to serialize it to pass to the bg function
+      uploaded_data_path <- tempfile(fileext = ".rds")
+      saveRDS(processed_data(), uploaded_data_path)
       
       # Show a modal spinner while the process runs
       #show_modal_spinner(spin = "self-building-square", text = "Processing query in the background...")
-      serialized_handle_se <- serialize(object = handle_se, NULL)
+      # serialized_handle_se <- serialize(object = handle_se, NULL)
+
       # Run merge.R in the background
-      handle_se_process <- callr::r_bg(
-        function(handle_se, selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
+      proc <- callr::r_bg(
+        function(selected_population, user_email, uploaded_data_path, N_case_se, N_control_se, 
                  OR_colname_se, SE_colname_se, chromosome_colname, position_colname) {
           # FIXME: move this to app.R, and if that doesn't work, then move it back
           # Source the merge.R script
+          message("Entering background process...")
+
           source(file.path(Sys.getenv("APP_ROOT", unset="../CCAFE"), "app/logic/handle_se.R"))
+          message("Sourced handle_se.R, now executing handle_se()...")
+
+          # load uploaded_data from the tempfile path
+          uploaded_data <- readRDS(uploaded_data_path)
+          message("Loading data from ", uploaded_data_path)
+
           handle_se(selected_population, user_email, uploaded_data, N_case_se, N_control_se,
                     OR_colname_se, SE_colname_se, chromosome_colname, position_colname) # Execute function
         }, 
-        args = list(handle_se, selected_population, user_email, uploaded_data, N_case_se, N_control_se, 
+        args = list(selected_population, user_email, uploaded_data_path, N_case_se, N_control_se, 
                     OR_colname_se, SE_colname_se, chromosome_colname, position_colname), 
         supervise = TRUE
       )
-      message(processx::poll(list(handle_se_process), 1000))
-      # Poll for completion of merge process
-      observe({
-        if (handle_se_process$poll_io(0)["process"] != "ready") {
-          # If process is still running, don't do anything yet
-          message("still querying...")
-          message(processx::poll(list(handle_se_process), 60000))
-          message(handle_se_process$get_exit_status())
-          message(handle_se_process$read_error())
-          message(handle_se_process$read_output())
-          showNotification("Still querying...", type = "message")
-          invalidateLater(60000, session) # Poll every minute
-          # Navigate to the email input page
-        } else {
-          message("completed query succesful...")
-          message(handle_se_process$get_exit_status())
-          # Process completed
-          if (handle_se_process$get_exit_status() == 0) {
-            message("Completed querying data and running CaseControl_SE()")
-            results_se <- handle_se_process$get_result()
-            # message(str(results_se))
-            results(results_se)
-            
-            shinyjs::hide("data_preview")
-            shinyjs::show("results_preview")
-            show_results(TRUE)
-            # Notify the user and allow navigation to the next step
-            message("ControlCase_SE method was executed successfully!")
-            # showNotification("Process completed successfully!", type = "message")
-            
-          } else {
-            # Handle errors
-            message("Error occurred after querying and merging was finished, did not go into CC_SE")
-            # showNotification("Error occurred during processing.", type = "error")
-          }
+
+      message("Started background process with PID: ", proc$get_pid())
+
+      # store the handle in a reactive so we can observe it
+      bg_job(proc)
+
+      showNotification("Starting process in the background...", type = "message")
+    })
+
+    # poll the background process every 500ms for output and completion status
+    resultPoll <- reactivePoll(
+      intervalMillis = 500,
+      session = session,
+      checkFunc = function() {
+        j <- bg_job()
+        if (is.null(j)) return("no-job")
+
+        # show stdout and stderr for debugging
+        msg <- j$read_output_lines()
+        if (length(msg)) message(paste("bg_task (stdout): ", msg, collapse="\n"))
+
+        err <- j$read_error_lines()
+        if (length(err)) message(paste("bg_task (stderr): ", err, collapse="\n"))
+
+        if (j$is_alive()) "running" else paste0("exit:", j$get_exit_status())
+      },
+      valueFunc = function() {
+        j <- bg_job()
+        
+        if (is.null(j) || j$is_alive()) {
+          return(list(done = FALSE))
         }
-      })  
+
+        # process has finished; decide success vs failure
+        exit <- j$get_exit_status()
+        if (!is.null(exit) && exit != 0) {
+          # non-zero exit — definitely failed
+          return(list(
+            done = TRUE, ok = FALSE, exit_status = exit,
+            error = paste(c(j$read_error_lines(), collapse = "\n"))
+          ))
+        }
+        # exit status is 0, but get_result() could still raise a remote error
+        out <- tryCatch(
+          list(done = TRUE, ok = TRUE, result = j$get_result()),
+          error = function(e) {
+            list(done = TRUE, ok = FALSE, exit_status = 1, error = conditionMessage(e))
+          }
+        )
+        # (optional) include captured output for debugging
+        out$output <- paste(j$read_output_lines(), collapse = "\n")
+        out
+      }
+    )
+
+    observeEvent(resultPoll(), ignoreInit = TRUE, {
+      payload <- resultPoll()
+      req(isTRUE(payload$done))  # only run when finished
+
+      if (isTRUE(payload$ok)) {
+        result <- payload$result
+        showNotification(sprintf("Job done! Result = %s", as.character(result)), type = "message")
+      } else {
+        msg <- if (!is.null(payload$error) && nzchar(payload$error)) payload$error else "Unknown error"
+        showNotification(paste("Job failed:", msg), type = "error", duration = NULL)
+        # you can also surface payload$exit_status or payload$output for debugging
+      }
     })
     
     # Display the first 10 rows of the results dataframe
