@@ -14,6 +14,14 @@ box::use(
 
 load_dot_env()
 
+# create a folder named job_exports under the current working directory if it doesn't exist
+if (!dir.exists("job_exports")) {
+  dir.create("job_exports", recursive = TRUE)
+}
+# add it as a static resource folder to shiny
+shiny::addResourcePath("job_exports", "job_exports")
+
+
 #' @export
 ui <- function(id) {
   ns <- NS(id)
