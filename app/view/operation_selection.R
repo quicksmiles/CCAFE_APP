@@ -165,12 +165,12 @@ operationSelectionUI <- function(id) {
           uiOutput(ns("card_title")),
           
           conditionalPanel(
-            condition = sprintf("!%s", ns("show_results")),  # Show data preview when results are not available
+            condition = sprintf("!input['%s']", ns("show_results")),  # Show data preview when results are not available
             DTOutput(ns("data_preview"))
           ),
           
           conditionalPanel(
-            condition = sprintf("%s", ns("show_results")),  # Show results preview when results are available
+            condition = sprintf("input['%s']", ns("show_results")),  # Show results preview when results are available
             DTOutput(ns("results_preview"))
           ),
           
