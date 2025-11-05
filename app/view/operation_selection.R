@@ -386,7 +386,9 @@ operationSelectionServer <- function(id, main_session) {
         }, 
         args = list(selected_population, user_email, uploaded_data_path, N_case_se, N_control_se, 
                     OR_colname_se, SE_colname_se, chromosome_colname, position_colname), 
-        supervise = TRUE
+        supervise = TRUE,
+        stdout = "",
+        stderr = ""
       )
 
       message("Started background process with PID: ", proc$get_pid())
@@ -405,12 +407,12 @@ operationSelectionServer <- function(id, main_session) {
         j <- bg_job()
         if (is.null(j)) return("no-job")
 
-        # show stdout and stderr for debugging
-        msg <- j$read_output_lines()
-        if (length(msg)) message(paste("bg_task (stdout): ", msg, collapse="\n"))
+        # # show stdout and stderr for debugging
+        # msg <- j$read_output_lines()
+        # if (length(msg)) message(paste("bg_task (stdout): ", msg, collapse="\n"))
 
-        err <- j$read_error_lines()
-        if (length(err)) message(paste("bg_task (stderr): ", err, collapse="\n"))
+        # err <- j$read_error_lines()
+        # if (length(err)) message(paste("bg_task (stderr): ", err, collapse="\n"))
 
         if (j$is_alive()) "running" else paste0("exit:", j$get_exit_status())
       },
