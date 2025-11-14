@@ -14,6 +14,19 @@ box::use(
 
 load_dot_env()
 
+# create a folder named job_exports under the current working directory if it doesn't exist
+if (!dir.exists("job_exports")) {
+  dir.create("job_exports", recursive = TRUE)
+}
+# add it as a static resource folder to shiny
+shiny::addResourcePath("job_exports", "job_exports")
+
+# when running in dev, set the APP_BASE_URL to localhost
+if (Sys.getenv("APP_ENV", unset="production") == "dev") {
+  Sys.setenv(APP_BASE_URL="http://localhost:3850/ccafe")
+  message("Running in dev mode - setting APP_BASE_URL to: ", Sys.getenv("APP_BASE_URL"))
+}
+
 #' @export
 ui <- function(id) {
   ns <- NS(id)
@@ -58,7 +71,7 @@ ui <- function(id) {
                                           class = "navbar-brand pt-0 my-0",
                                           style = "display: flex; align-items: center; justify-content: flex-start;",
                                           tags$a(
-                                            href = "https://hendrickslab.cu-dbmi.dev/ccafe/",
+                                            href = "/ccafe/",
                                             tags$h1("CCAFE", style = "color: white; margin:0;")
                                           )
                                         )

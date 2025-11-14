@@ -12,54 +12,43 @@ box::use(
 # intro to ratelimitr:
 # https://cran.r-project.org/web/packages/ratelimitr/vignettes/introduction.html
 
+box::use(
+  app/state/db[getDBCon, closeCon, makeTables, getCachedVariant, cacheVariant],
+  app/utils/debug[print_structure],
+)
+
 #df <- read.delim(file = "/Users/hugolemus/Downloads/pheno_295_EUR.txt.gz", header = TRUE, sep = "\t")
 gnomad_api_url <- Sys.getenv("GNOMAD_API_URL", unset="https://gnomad.broadinstitute.org/api")
 
+USE_VARIANT_CACHE <- Sys.getenv("USE_VARIANT_CACHE", unset="FALSE") == "TRUE"
+WRITE_TO_VARIANT_CACHE <- Sys.getenv("WRITE_TO_VARIANT_CACHE", unset="TRUE") == "TRUE"
+
 # Function to read input file and generate query ranges
 generate_ranges <- function(data, range_size = 100000) {
-  range_size = 100000
-  # data <- read.delim(file_path, header = TRUE, sep = "\t")
-  #data <- as.data.table(data)
-  # Extract unique chromosome and position ranges
-  ranges <- data %>%
+  message("Generating query ranges for dataset with ", nrow(data), " rows.")
+
+  # if the input has zero rows, just return an empty dataframe
+  if (nrow(data) == 0) {
+    return(data.frame(
+      chrom = character(0),
+      start = integer(0),
+      stop = integer(0)
+    ))
+  }
+
+  data %>%
     group_by(chrom) %>%
-    summarise(
+    filter(any(!is.na(pos))) %>%
+    mutate(
       min_pos = min(pos),
       max_pos = max(pos),
-      .groups = 'drop'
+      bin     = (pos - min_pos) %/% range_size,
+      start   = min_pos + bin * range_size,
+      stop    = pmin(start + range_size - 1L, max_pos)
     ) %>%
-    rowwise() %>%
-    do({
-      chrom <- .$chrom
-      start_positions <- seq(.$min_pos, .$max_pos, by = range_size)
-      data.frame(
-        chrom = chrom,
-        start = start_positions,
-        stop = pmin(start_positions + range_size - 1, .$max_pos)
-      )
-    }) %>%
+    distinct(chrom, start, stop) %>%
+    arrange(chrom, start) %>%
     ungroup()
-  
-  # ranges <- as.data.table(ranges)
-  # 
-  # setkey(ranges, chrom, start, stop)
-  # ranges <- ranges[
-  #   data, 
-  #   on = .(chrom, start <= pos, stop >= pos), 
-  #   nomatch = 0
-  # ]
-  # Iterate over each row of the ranges and check that 
-  # data$pos values fall between the start/stop ranges
-  # If TRUE keeps range start/stop values otherwise discards
-  ranges$keep <- sapply(seq_len(nrow(ranges)), function(i) {
-    any(data$chrom == ranges$chrom[i] & data$pos >= ranges$start[i] & data$pos <= ranges$stop[i])
-  })
-
-  # Filter the ranges dataframe
-  ranges <- ranges[ranges$keep, ]
-  ranges$keep <- NULL  # Drop the helper column
-  
-  return(ranges)
 }
 
 do_query <- function(uploaded_data) {
@@ -123,30 +112,187 @@ do_query <- function(uploaded_data) {
     rate(n = 10, period = 60)
   )
 
-  # Read the provided file and generate ranges
-  # file_path <- "../CCAFE/uploaded_user_file.text.gz"  # Update this with the correct path
-  ranges <- generate_ranges(uploaded_data)
+  # get a handle to the db so we can pull cached variants
+  dbCon <- getDBCon(readonly = TRUE)
+  on.exit(closeCon(dbCon))
+
+  # ensure the tables we need exist
+  makeTables(dbCon)
+
+  # this list will ultimately store all of the query results
+  results <- list()
+
+  if (USE_VARIANT_CACHE) {
+    message("USE_VARIANT_CACHE=TRUE, using variant cache for queries.")
+
+    # iterate through uploaded_data to find which variants are cached
+    # and add them to results
+    variants_cached <- uploaded_data %>%
+      rowwise() %>%
+      mutate(
+        genome_populations = list(
+          getCachedVariant(chrom, pos, ref, alt, con = dbCon)
+        )
+      ) %>%
+      # filter(!is.null(genome_populations)) %>%
+      ungroup() %>%
+      arrange(chrom, pos)
+
+    assign("variants_cached_df", variants_cached, envir = .GlobalEnv)
+
+    # if there are any, put these cached variants into results
+    if (nrow(variants_cached) > 0) {
+      message("Found ", nrow(variants_cached), " cached variants.")
+
+      for (i in seq_len(nrow(variants_cached))) {
+        # 1) ensure populations is a plain data.frame
+        pop_df <- as.data.frame(variants_cached$genome_populations[[i]]$populations,
+                                stringsAsFactors = FALSE)
+        rownames(pop_df) <- NULL
+
+        # 2) make a 1x1 data.frame whose single column is 'populations'
+        genome_df <- data.frame(
+          populations = I(list(pop_df)),
+          stringsAsFactors = FALSE
+        )
+
+        # 3) variants is a data.frame with a 'genome' column that is itself a 1x1 df
+        variants_df <- data.frame(
+          chrom = as.character(variants_cached$chrom[i]),
+          pos   = as.integer(variants_cached$pos[i]),
+          ref   = as.character(variants_cached$ref[i]),
+          alt   = as.character(variants_cached$alt[i]),
+          genome = I(genome_df),
+          stringsAsFactors = FALSE
+        )
+
+        results[[length(results) + 1]] <- list(
+          data = list(
+            region = list(
+              variants = variants_df
+            )
+          )
+        )
+      }
+    }
+
+    # create a version of uploaded_data that uses results
+    # to exclude variants that are already cached
+    uploaded_data_sans_cached <- uploaded_data %>%
+      anti_join(
+        variants_cached %>%
+          select(chrom, pos, ref, alt),
+        by = c("chrom", "pos", "ref", "alt")
+      )
+
+    # generate ranges for the remaining variants we need to query for, since
+    # they're apparently not in the cache
+    ranges <- generate_ranges(uploaded_data_sans_cached)
+  }
+  else {
+    message("USE_VARIANT_CACHE=FALSE, Not using variant cache for queries.")
+
+    # generate the full set of ranges, since we have no cache to remove any of them
+    ranges <- generate_ranges(uploaded_data)
+  }
 
   # Query gnomAD API for each range and store the results
   full_query_runtime <- system.time({
-    results <- list()
-    for (i in 1:nrow(ranges)) {
-      message("Querying range ", i, " of ", nrow(ranges))
-      args <- list(
-        chrom = as.character(ranges$chrom[i]),
-        start =  as.integer(ranges$start[i]),
-        stop = as.integer(ranges$stop[i])
-      )
-      
-      result <- exec_query(args)
-      if (!is.null(result)) {
-        results[[i]] <- result
+    if (nrow(ranges) > 0) {
+      for (i in seq_len(nrow(ranges))) {
+        single_query_runtime <- system.time({
+          message("Querying range ", i, " of ", nrow(ranges))
+          args <- list(
+            chrom = as.character(ranges$chrom[i]),
+            start =  as.integer(ranges$start[i]),
+            stop = as.integer(ranges$stop[i])
+          )
+          message("Args: ", paste(names(args), args, sep="=", collapse=", "))
+          
+          result <- exec_query(args)
+
+          # remove the chrom, start, stop, reference_genome fields from result$data$region
+          for (field in c("chrom", "start", "stop", "reference_genome")) {
+            result$data$region[[field]] <- NULL
+          }
+
+          if (!is.null(result) && !is.null(result$data$region$variants)) {
+            # extract dataframe
+            variants_df <- result$data$region$variants
+
+            # filter it to just variants in uploaded_data
+            # (note that this solves the memory issue we were having before, where 
+            # all the variants in large ranges were being retained -- consuming
+            # large amounts of memory -- which are ultimately dropped near the
+            # end of the merge process.)
+            filtered_variants <- dplyr::semi_join(
+              variants_df,
+              uploaded_data,
+              by = c("chrom", "pos")
+            )
+
+            # print out the contents of the filtered_variants dataframe
+            message("Filtered variants for range ", i, ":")
+
+            message(paste(utils::capture.output(print(filtered_variants)), collapse = "\n"))
+
+            if (WRITE_TO_VARIANT_CACHE) {
+              message("WRITE_TO_VARIANT_CACHE=TRUE, writing queried variants to cache.")
+
+              # insert each variant into the cache
+              for (j in seq_len(nrow(filtered_variants))) {
+                # check if filtered_variants$genome[j] is not NULL; if it is, skip caching
+                # TODO: this still needs to be tested on the 500-variant sample file
+                if (is.null(filtered_variants$populations[[j]])) {
+                  message("Variant at ", filtered_variants$chrom[j], ":", filtered_variants$pos[j],
+                          " has no population data; writing NULL to cache.")
+                  
+                  genome_data_val <- NA
+                }
+                else {
+                  genome_data_val <- list(
+                    populations = filtered_variants$populations[[j]]
+                  )
+                }
+
+                cacheVariant(
+                  chrom = filtered_variants$chrom[j],
+                  pos = filtered_variants$pos[j],
+                  ref = filtered_variants$ref[j],
+                  alt = filtered_variants$alt[j],
+                  genome_data = genome_data_val,
+                  con = dbCon
+                )
+              }
+            } else {
+              message("WRITE_TO_VARIANT_CACHE=FALSE, not writing queried variants to cache.")
+            }
+
+            # reassign filtered variants to result's field
+            result$data$region$variants <- filtered_variants
+
+            results[[i]] <- result
+          }
+        })
+
+        # emit this range's timing
+        message("Single query runtime for range ", i, ": ", single_query_runtime[3], " seconds")
       }
+    }
+    else {
+      message("All variants were found in the cache; no gnomad queries needed.")
     }
   })
 
   # Display system run time for query 
-  message(full_query_runtime)
+  message("Full query runtime: ", full_query_runtime[3], " seconds")
+
+  # print_structure(results, name = "final_results_list")
+
+  assign(
+    paste0("final_results_list__cached_", as.character(USE_VARIANT_CACHE)),
+    results, envir = .GlobalEnv
+  )
 
   # Combine all variant query results from all generated range values
   query_results <- bind_rows(lapply(results, function(res){

@@ -5,3 +5,8 @@
 .DS_Store
 app_cache
 .env
+
+# exclude application state, since it's created at runtime
+/app_state/
+# exclude job results
+/job_exports/
