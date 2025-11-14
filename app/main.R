@@ -108,6 +108,13 @@ ui <- function(id) {
     ),
     body = argonDashBody(
       style = "margin-top: 80px;",
+      tags$head(
+        tags$link(
+          rel = "icon",
+          type = "image/png",
+          href = "static/favicon.png"
+        )
+      ),
       argonTabItems(
         argonTabItem(
           tabName = "home",
